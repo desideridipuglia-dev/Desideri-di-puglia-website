@@ -24,24 +24,10 @@ const Hero = ({ onScrollToRooms }) => {
 
       {/* Content */}
       <div className="relative z-10 h-full flex flex-col justify-center items-center text-center px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="mb-8"
-        >
-          <img 
-            src={LOGO_URL} 
-            alt="Desideri di Puglia" 
-            className="w-32 h-32 md:w-40 md:h-40 mx-auto"
-            data-testid="hero-logo"
-          />
-        </motion.div>
-
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
           className="font-accent text-antique-gold text-sm md:text-base tracking-[0.3em] uppercase mb-4"
         >
           {t('hero.subtitle')}
@@ -50,7 +36,7 @@ const Hero = ({ onScrollToRooms }) => {
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
           className="font-heading text-white text-4xl md:text-6xl lg:text-7xl tracking-tight mb-6"
           data-testid="hero-title"
         >
@@ -60,7 +46,7 @@ const Hero = ({ onScrollToRooms }) => {
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
           className="font-body text-white/90 text-base md:text-lg max-w-2xl mb-8 leading-relaxed"
         >
           {t('hero.description')}
@@ -69,7 +55,7 @@ const Hero = ({ onScrollToRooms }) => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1 }}
+          transition={{ duration: 0.8, delay: 0.8 }}
           className="flex flex-col items-center gap-6"
         >
           <Button
@@ -91,7 +77,7 @@ const Hero = ({ onScrollToRooms }) => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 1.2 }}
+        transition={{ duration: 0.8, delay: 1 }}
         className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
       >
         <motion.div
