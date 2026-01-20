@@ -34,8 +34,12 @@ const BookingPage = () => {
     guest_email: '',
     guest_phone: '',
     num_guests: 1,
-    notes: ''
+    notes: '',
+    coupon_code: ''
   });
+  
+  const [couponStatus, setCouponStatus] = useState(null); // null, 'valid', 'invalid'
+  const [couponDiscount, setCouponDiscount] = useState(null);
 
   // Fetch rooms
   useEffect(() => {
