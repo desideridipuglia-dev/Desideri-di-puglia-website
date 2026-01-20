@@ -146,6 +146,193 @@ class AdminSettings(BaseModel):
     check_out_time: str = "10:30"
 
 
+# ==================== EMAIL FUNCTIONS ====================
+
+def generate_booking_confirmation_email(booking: dict, room: dict, language: str = "it") -> str:
+    """Generate HTML email for booking confirmation"""
+    
+    room_name = room.get("name_it") if language == "it" else room.get("name_en")
+    
+    if language == "it":
+        subject = f"Conferma Prenotazione - Desideri di Puglia"
+        greeting = f"Gentile {booking['guest_name']},"
+        intro = "Grazie per aver scelto Desideri di Puglia! La tua prenotazione è confermata."
+        details_title = "Dettagli della prenotazione"
+        room_label = "Stanza"
+        checkin_label = "Check-in"
+        checkout_label = "Check-out"
+        guests_label = "Ospiti"
+        total_label = "Totale pagato"
+        checkin_info = "Orario check-in: dalle 13:00 alle 00:00"
+        checkout_info = "Orario check-out: dalle 10:00 alle 10:30"
+        address_title = "Indirizzo"
+        contact_title = "Contatti"
+        footer_text = "Ti aspettiamo a Barletta!"
+        note_text = "Ricorda di portare un documento di identità al check-in."
+    else:
+        subject = f"Booking Confirmation - Desideri di Puglia"
+        greeting = f"Dear {booking['guest_name']},"
+        intro = "Thank you for choosing Desideri di Puglia! Your booking is confirmed."
+        details_title = "Booking Details"
+        room_label = "Room"
+        checkin_label = "Check-in"
+        checkout_label = "Check-out"
+        guests_label = "Guests"
+        total_label = "Total paid"
+        checkin_info = "Check-in time: 1:00 PM to 12:00 AM"
+        checkout_info = "Check-out time: 10:00 AM to 10:30 AM"
+        address_title = "Address"
+        contact_title = "Contact"
+        footer_text = "We look forward to welcoming you in Barletta!"
+        note_text = "Please remember to bring an ID for check-in."
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Georgia', serif; background-color: #F9F8F4;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F9F8F4; padding: 40px 20px;">
+            <tr>
+                <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #E5E0D8;">
+                        <!-- Header -->
+                        <tr>
+                            <td style="background-color: #0A2342; padding: 40px; text-align: center;">
+                                <h1 style="color: #C5A059; margin: 0; font-size: 28px; font-weight: normal; letter-spacing: 2px;">
+                                    DESIDERI DI PUGLIA
+                                </h1>
+                                <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 12px; letter-spacing: 3px; text-transform: uppercase;">
+                                    Boutique B&B
+                                </p>
+                            </td>
+                        </tr>
+                        
+                        <!-- Content -->
+                        <tr>
+                            <td style="padding: 40px;">
+                                <p style="color: #0A2342; font-size: 18px; margin: 0 0 20px 0;">
+                                    {greeting}
+                                </p>
+                                <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                                    {intro}
+                                </p>
+                                
+                                <!-- Booking Details Box -->
+                                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F9F8F4; border: 1px solid #E5E0D8; margin-bottom: 30px;">
+                                    <tr>
+                                        <td style="padding: 20px; border-bottom: 1px solid #E5E0D8;">
+                                            <h2 style="color: #0A2342; font-size: 16px; margin: 0; text-transform: uppercase; letter-spacing: 1px;">
+                                                {details_title}
+                                            </h2>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 20px;">
+                                            <table width="100%" cellpadding="8" cellspacing="0">
+                                                <tr>
+                                                    <td style="color: #666666; width: 40%;">{room_label}</td>
+                                                    <td style="color: #0A2342; font-weight: bold;">{room_name}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="color: #666666;">{checkin_label}</td>
+                                                    <td style="color: #0A2342; font-weight: bold;">{booking['check_in']}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="color: #666666;">{checkout_label}</td>
+                                                    <td style="color: #0A2342; font-weight: bold;">{booking['check_out']}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="color: #666666;">{guests_label}</td>
+                                                    <td style="color: #0A2342; font-weight: bold;">{booking['num_guests']}</td>
+                                                </tr>
+                                                <tr style="border-top: 1px solid #E5E0D8;">
+                                                    <td style="color: #666666; padding-top: 15px;">{total_label}</td>
+                                                    <td style="color: #C5A059; font-weight: bold; font-size: 20px; padding-top: 15px;">€{booking['total_price']}</td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                                
+                                <!-- Check-in/out Info -->
+                                <table width="100%" cellpadding="15" cellspacing="0" style="background-color: #0A2342; margin-bottom: 30px;">
+                                    <tr>
+                                        <td style="color: #ffffff; text-align: center;">
+                                            <p style="margin: 0 0 5px 0; font-size: 14px;">{checkin_info}</p>
+                                            <p style="margin: 0; font-size: 14px;">{checkout_info}</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                                
+                                <!-- Address -->
+                                <h3 style="color: #0A2342; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 15px 0;">
+                                    {address_title}
+                                </h3>
+                                <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 0 0 30px 0;">
+                                    Via Borgo Vecchio 65<br>
+                                    76121 Barletta (BT), Italia
+                                </p>
+                                
+                                <!-- Note -->
+                                <p style="color: #C5A059; font-size: 14px; font-style: italic; margin: 0 0 30px 0; padding: 15px; border-left: 3px solid #C5A059; background-color: #F9F8F4;">
+                                    {note_text}
+                                </p>
+                                
+                                <p style="color: #0A2342; font-size: 16px; margin: 0;">
+                                    {footer_text}
+                                </p>
+                            </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                            <td style="background-color: #0A2342; padding: 30px; text-align: center;">
+                                <p style="color: #C5A059; margin: 0 0 10px 0; font-size: 14px;">
+                                    Desideri di Puglia
+                                </p>
+                                <p style="color: #ffffff; margin: 0; font-size: 12px; opacity: 0.7;">
+                                    Via Borgo Vecchio 65, 76121 Barletta (BT), Italia
+                                </p>
+                                <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 12px; opacity: 0.7;">
+                                    info@desideridipuglia.it
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+    
+    return subject, html
+
+
+async def send_booking_confirmation_email(booking: dict, room: dict, language: str = "it"):
+    """Send booking confirmation email"""
+    try:
+        subject, html_content = generate_booking_confirmation_email(booking, room, language)
+        
+        params = {
+            "from": SENDER_EMAIL,
+            "to": [booking["guest_email"]],
+            "subject": subject,
+            "html": html_content
+        }
+        
+        # Run sync SDK in thread to keep FastAPI non-blocking
+        email_result = await asyncio.to_thread(resend.Emails.send, params)
+        logger.info(f"Confirmation email sent to {booking['guest_email']}, ID: {email_result.get('id')}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send confirmation email: {str(e)}")
+        return False
+
+
 # ==================== INITIALIZATION ====================
 
 async def init_rooms():
