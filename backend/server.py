@@ -1051,6 +1051,281 @@ async def get_contact_messages():
     return messages
 
 
+# ==================== AUTH ENDPOINTS ====================
+
+@api_router.post("/admin/login")
+async def admin_login(login_data: AdminLogin):
+    """Verify admin credentials and return token"""
+    password_hash = hash_password(login_data.password)
+    
+    if login_data.username == ADMIN_USERNAME and password_hash == ADMIN_PASSWORD_HASH:
+        # Generate a simple session token
+        token = secrets.token_urlsafe(32)
+        # Store token in DB with expiry
+        await db.admin_sessions.delete_many({})  # Clear old sessions
+        await db.admin_sessions.insert_one({
+            "token": token,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+        })
+        return {"success": True, "token": token}
+    
+    raise HTTPException(status_code=401, detail="Invalid credentials")
+
+@api_router.get("/admin/verify")
+async def verify_admin_token(token: str):
+    """Verify if admin token is valid"""
+    session = await db.admin_sessions.find_one({"token": token}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    if datetime.fromisoformat(session["expires_at"]) < datetime.now(timezone.utc):
+        await db.admin_sessions.delete_one({"token": token})
+        raise HTTPException(status_code=401, detail="Token expired")
+    
+    return {"valid": True}
+
+@api_router.post("/admin/logout")
+async def admin_logout(token: str):
+    """Logout admin"""
+    await db.admin_sessions.delete_one({"token": token})
+    return {"success": True}
+
+
+# ==================== SITE IMAGES ENDPOINTS ====================
+
+@api_router.get("/site-images")
+async def get_site_images():
+    """Get site images configuration"""
+    images = await db.site_images.find_one({"id": "site_images"}, {"_id": 0})
+    if not images:
+        # Create default
+        default = SiteImages()
+        default_dict = default.model_dump()
+        default_dict["updated_at"] = default_dict["updated_at"].isoformat()
+        await db.site_images.insert_one(default_dict)
+        images = await db.site_images.find_one({"id": "site_images"}, {"_id": 0})
+    return images
+
+@api_router.put("/site-images")
+async def update_site_images(update: SiteImagesUpdate):
+    """Update site images"""
+    update_data = {k: v for k, v in update.model_dump().items() if v is not None}
+    if update_data:
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.site_images.update_one(
+            {"id": "site_images"}, 
+            {"$set": update_data}, 
+            upsert=True
+        )
+    return await db.site_images.find_one({"id": "site_images"}, {"_id": 0})
+
+
+# ==================== ANALYTICS ENDPOINTS ====================
+
+@api_router.get("/analytics/overview")
+async def get_analytics_overview(start_date: Optional[str] = None, end_date: Optional[str] = None):
+    """Get analytics overview with optional date filters"""
+    
+    # Default to current year if no dates provided
+    if not start_date:
+        start_date = f"{datetime.now().year}-01-01"
+    if not end_date:
+        end_date = datetime.now().strftime("%Y-%m-%d")
+    
+    # Get all bookings in date range
+    bookings = await db.bookings.find({
+        "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"},
+        "status": {"$in": ["confirmed", "completed"]}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Get all bookings (including pending for comparison)
+    all_bookings = await db.bookings.find({
+        "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Calculate metrics
+    total_bookings = len(bookings)
+    total_revenue = sum(b.get("total_price", 0) for b in bookings)
+    total_discounts = sum(b.get("discount_amount", 0) for b in bookings)
+    
+    # Calculate nights
+    total_nights = 0
+    for b in bookings:
+        try:
+            check_in = datetime.strptime(b["check_in"], "%Y-%m-%d")
+            check_out = datetime.strptime(b["check_out"], "%Y-%m-%d")
+            total_nights += (check_out - check_in).days
+        except:
+            pass
+    
+    # Average price per night
+    avg_price_per_night = total_revenue / total_nights if total_nights > 0 else 0
+    
+    # Occupancy rate calculation
+    start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+    end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+    total_available_nights = (end_dt - start_dt).days * 2  # 2 rooms
+    occupancy_rate = (total_nights / total_available_nights * 100) if total_available_nights > 0 else 0
+    
+    # Bookings by room
+    bookings_by_room = {"nonna": 0, "pozzo": 0}
+    revenue_by_room = {"nonna": 0, "pozzo": 0}
+    for b in bookings:
+        room_id = b.get("room_id", "")
+        if room_id in bookings_by_room:
+            bookings_by_room[room_id] += 1
+            revenue_by_room[room_id] += b.get("total_price", 0)
+    
+    # Bookings by status
+    status_counts = {"pending": 0, "confirmed": 0, "cancelled": 0, "completed": 0}
+    for b in all_bookings:
+        status = b.get("status", "pending")
+        if status in status_counts:
+            status_counts[status] += 1
+    
+    # Conversion rate (confirmed+completed / total)
+    total_all = len(all_bookings)
+    conversion_rate = ((status_counts["confirmed"] + status_counts["completed"]) / total_all * 100) if total_all > 0 else 0
+    
+    # Average guests
+    avg_guests = sum(b.get("num_guests", 1) for b in bookings) / total_bookings if total_bookings > 0 else 0
+    
+    # Coupon usage
+    bookings_with_coupon = len([b for b in bookings if b.get("coupon_code")])
+    coupon_usage_rate = (bookings_with_coupon / total_bookings * 100) if total_bookings > 0 else 0
+    
+    return {
+        "period": {"start_date": start_date, "end_date": end_date},
+        "summary": {
+            "total_bookings": total_bookings,
+            "total_revenue": round(total_revenue, 2),
+            "total_discounts": round(total_discounts, 2),
+            "net_revenue": round(total_revenue, 2),
+            "total_nights": total_nights,
+            "avg_price_per_night": round(avg_price_per_night, 2),
+            "occupancy_rate": round(occupancy_rate, 1),
+            "conversion_rate": round(conversion_rate, 1),
+            "avg_guests": round(avg_guests, 1),
+            "coupon_usage_rate": round(coupon_usage_rate, 1)
+        },
+        "by_room": {
+            "bookings": bookings_by_room,
+            "revenue": {k: round(v, 2) for k, v in revenue_by_room.items()}
+        },
+        "by_status": status_counts
+    }
+
+@api_router.get("/analytics/monthly")
+async def get_monthly_analytics(year: int = None):
+    """Get monthly breakdown for a year"""
+    if not year:
+        year = datetime.now().year
+    
+    monthly_data = []
+    
+    for month in range(1, 13):
+        start_date = f"{year}-{month:02d}-01"
+        if month == 12:
+            end_date = f"{year}-12-31"
+        else:
+            end_date = f"{year}-{month+1:02d}-01"
+        
+        bookings = await db.bookings.find({
+            "created_at": {"$gte": start_date, "$lt": end_date},
+            "status": {"$in": ["confirmed", "completed"]}
+        }, {"_id": 0}).to_list(1000)
+        
+        revenue = sum(b.get("total_price", 0) for b in bookings)
+        
+        # Calculate nights
+        nights = 0
+        for b in bookings:
+            try:
+                check_in = datetime.strptime(b["check_in"], "%Y-%m-%d")
+                check_out = datetime.strptime(b["check_out"], "%Y-%m-%d")
+                nights += (check_out - check_in).days
+            except:
+                pass
+        
+        # Days in month * 2 rooms
+        import calendar
+        days_in_month = calendar.monthrange(year, month)[1]
+        available_nights = days_in_month * 2
+        occupancy = (nights / available_nights * 100) if available_nights > 0 else 0
+        
+        monthly_data.append({
+            "month": month,
+            "month_name": calendar.month_name[month],
+            "bookings": len(bookings),
+            "revenue": round(revenue, 2),
+            "nights": nights,
+            "occupancy_rate": round(occupancy, 1)
+        })
+    
+    return {"year": year, "months": monthly_data}
+
+@api_router.get("/analytics/recent-bookings")
+async def get_recent_bookings(limit: int = 10):
+    """Get recent bookings for dashboard"""
+    bookings = await db.bookings.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    return bookings
+
+@api_router.get("/analytics/top-stats")
+async def get_top_stats():
+    """Get quick stats for dashboard header"""
+    today = datetime.now().strftime("%Y-%m-%d")
+    month_start = datetime.now().replace(day=1).strftime("%Y-%m-%d")
+    year_start = f"{datetime.now().year}-01-01"
+    
+    # Today's check-ins
+    todays_checkins = await db.bookings.count_documents({
+        "check_in": today,
+        "status": {"$in": ["confirmed", "completed"]}
+    })
+    
+    # Today's check-outs
+    todays_checkouts = await db.bookings.count_documents({
+        "check_out": today,
+        "status": {"$in": ["confirmed", "completed"]}
+    })
+    
+    # Pending bookings
+    pending_count = await db.bookings.count_documents({"status": "pending"})
+    
+    # This month revenue
+    month_bookings = await db.bookings.find({
+        "created_at": {"$gte": month_start},
+        "status": {"$in": ["confirmed", "completed"]}
+    }, {"_id": 0}).to_list(1000)
+    month_revenue = sum(b.get("total_price", 0) for b in month_bookings)
+    
+    # Year revenue
+    year_bookings = await db.bookings.find({
+        "created_at": {"$gte": year_start},
+        "status": {"$in": ["confirmed", "completed"]}
+    }, {"_id": 0}).to_list(10000)
+    year_revenue = sum(b.get("total_price", 0) for b in year_bookings)
+    
+    # Unread messages
+    unread_messages = await db.contact_messages.count_documents({"is_read": False})
+    
+    # Pending reviews
+    pending_reviews = await db.reviews.count_documents({"is_approved": False})
+    
+    return {
+        "todays_checkins": todays_checkins,
+        "todays_checkouts": todays_checkouts,
+        "pending_bookings": pending_count,
+        "month_revenue": round(month_revenue, 2),
+        "year_revenue": round(year_revenue, 2),
+        "month_bookings": len(month_bookings),
+        "year_bookings": len(year_bookings),
+        "unread_messages": unread_messages,
+        "pending_reviews": pending_reviews
+    }
+
+
 # ==================== STARTUP ====================
 
 @app.on_event("startup")
