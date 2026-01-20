@@ -1,0 +1,76 @@
+{
+  "summary": {
+    "tests_run": 11,
+    "tests_passed": 11,
+    "success_rate": 100.0,
+    "timestamp": "2026-01-20T05:20:10.950117"
+  },
+  "results": [
+    {
+      "test": "Health Check",
+      "success": true,
+      "details": "Status: 200, Response: {'status': 'healthy'}",
+      "timestamp": "2026-01-20T05:20:09.879131"
+    },
+    {
+      "test": "Root Endpoint",
+      "success": true,
+      "details": "Status: 200, Message: Desideri di Puglia API",
+      "timestamp": "2026-01-20T05:20:09.911453"
+    },
+    {
+      "test": "Get Rooms",
+      "success": true,
+      "details": "Status: 200, Found 2 rooms, Found 'Stanza della Nonna', Found 'Stanza del Pozzo', Correct price \u20ac80.0/night, Correct price \u20ac80.0/night",
+      "timestamp": "2026-01-20T05:20:09.950573"
+    },
+    {
+      "test": "Get Room Detail (nonna)",
+      "success": true,
+      "details": "Status: 200, Room: Stanza della Nonna, Max guests: 3, Images: 3",
+      "timestamp": "2026-01-20T05:20:09.986448"
+    },
+    {
+      "test": "Get Availability (nonna)",
+      "success": true,
+      "details": "Status: 200, Unavailable dates: 0",
+      "timestamp": "2026-01-20T05:20:10.022546"
+    },
+    {
+      "test": "Get Room Detail (pozzo)",
+      "success": true,
+      "details": "Status: 200, Room: Stanza del Pozzo, Max guests: 3, Images: 3",
+      "timestamp": "2026-01-20T05:20:10.056535"
+    },
+    {
+      "test": "Get Availability (pozzo)",
+      "success": true,
+      "details": "Status: 200, Unavailable dates: 0",
+      "timestamp": "2026-01-20T05:20:10.100955"
+    },
+    {
+      "test": "Create Booking",
+      "success": true,
+      "details": "Status: 200, Booking ID: 63d3303c-626e-4dac-b33d-b11352b1d95c, Total: \u20ac160.0, Nights: 2, Stripe checkout URL created",
+      "timestamp": "2026-01-20T05:20:10.828907"
+    },
+    {
+      "test": "Get Reviews",
+      "success": true,
+      "details": "Status: 200, Found 0 reviews",
+      "timestamp": "2026-01-20T05:20:10.865732"
+    },
+    {
+      "test": "Contact Submission",
+      "success": true,
+      "details": "Status: 200, Message: Message sent successfully",
+      "timestamp": "2026-01-20T05:20:10.913020"
+    },
+    {
+      "test": "Get Settings",
+      "success": true,
+      "details": "Status: 200, Check-in: 13:00, Check-out: 10:30",
+      "timestamp": "2026-01-20T05:20:10.949218"
+    }
+  ]
+}
