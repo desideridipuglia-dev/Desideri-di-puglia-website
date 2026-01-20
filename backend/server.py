@@ -84,6 +84,8 @@ class Booking(BaseModel):
     payment_status: str = "pending"  # pending, paid, refunded
     stripe_session_id: Optional[str] = None
     notes: Optional[str] = None
+    coupon_code: Optional[str] = None
+    discount_amount: float = 0.0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -97,6 +99,7 @@ class BookingCreate(BaseModel):
     num_guests: int
     notes: Optional[str] = None
     origin_url: str
+    coupon_code: Optional[str] = None
 
 class Review(BaseModel):
     model_config = ConfigDict(extra="ignore")
