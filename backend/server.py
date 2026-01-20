@@ -658,6 +658,27 @@ async def update_booking_status(booking_id: str, status: str):
     )
     return {"message": "Booking status updated"}
 
+@api_router.post("/bookings/{booking_id}/resend-confirmation")
+async def resend_booking_confirmation(booking_id: str):
+    """Admin endpoint to resend confirmation email"""
+    booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    if booking["payment_status"] != "paid":
+        raise HTTPException(status_code=400, detail="Cannot send confirmation for unpaid booking")
+    
+    room = await db.rooms.find_one({"id": booking["room_id"]}, {"_id": 0})
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    
+    success = await send_booking_confirmation_email(booking, room, "it")
+    
+    if success:
+        return {"message": "Confirmation email sent successfully"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to send email")
+
 
 # ==================== STRIPE WEBHOOK ====================
 
