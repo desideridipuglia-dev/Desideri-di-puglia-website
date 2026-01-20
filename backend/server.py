@@ -1,10 +1,13 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 import asyncio
+import hashlib
+import secrets
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict
@@ -24,10 +27,15 @@ db = client[os.environ['DB_NAME']]
 
 # Resend configuration
 resend.api_key = os.environ.get('RESEND_API_KEY')
-SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'prenotazioni@desideridipuglia.it')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'prenotazioni@desideridipuglia.com')
+
+# Admin credentials
+ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH', '')
 
 # Create the main app without a prefix
 app = FastAPI()
+security = HTTPBasic()
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
