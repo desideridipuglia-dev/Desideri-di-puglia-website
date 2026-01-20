@@ -277,16 +277,29 @@ const AdminPage = () => {
                                 </span>
                               </td>
                               <td>
-                                <select
-                                  value={booking.status}
-                                  onChange={(e) => handleUpdateBookingStatus(booking.id, e.target.value)}
-                                  className="border border-puglia-stone p-1 text-sm"
-                                >
-                                  <option value="pending">Pending</option>
-                                  <option value="confirmed">Confirmed</option>
-                                  <option value="cancelled">Cancelled</option>
-                                  <option value="completed">Completed</option>
-                                </select>
+                                <div className="flex items-center gap-2">
+                                  <select
+                                    value={booking.status}
+                                    onChange={(e) => handleUpdateBookingStatus(booking.id, e.target.value)}
+                                    className="border border-puglia-stone p-1 text-sm"
+                                  >
+                                    <option value="pending">Pending</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                    <option value="completed">Completed</option>
+                                  </select>
+                                  {booking.payment_status === 'paid' && (
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={() => handleResendConfirmation(booking.id)}
+                                      title="Reinvia email conferma"
+                                      className="text-adriatic-blue hover:text-antique-gold"
+                                    >
+                                      <Mail className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           ))}
