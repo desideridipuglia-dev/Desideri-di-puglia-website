@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { 
   Home, Bed, Calendar, MessageSquare, Settings, 
-  ChevronRight, Edit, Check, X, Loader2, Eye, EyeOff
+  ChevronRight, Edit, Check, X, Loader2, Eye, EyeOff, Mail
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
