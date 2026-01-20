@@ -492,6 +492,117 @@ async def remove_blocked_date(room_id: str, date: str):
     await db.blocked_dates.delete_one({"room_id": room_id, "date": date})
     return {"message": "Date unblocked successfully"}
 
+@api_router.get("/blocked-dates/{room_id}")
+async def get_blocked_dates(room_id: str):
+    """Get all blocked dates for a room"""
+    blocked = await db.blocked_dates.find({"room_id": room_id}, {"_id": 0}).to_list(1000)
+    return blocked
+
+@api_router.post("/blocked-dates/range")
+async def block_date_range(room_id: str, start_date: str, end_date: str, reason: Optional[str] = None):
+    """Block a range of dates"""
+    current = datetime.strptime(start_date, "%Y-%m-%d")
+    end = datetime.strptime(end_date, "%Y-%m-%d")
+    blocked_count = 0
+    
+    while current <= end:
+        date_str = current.strftime("%Y-%m-%d")
+        existing = await db.blocked_dates.find_one({"room_id": room_id, "date": date_str})
+        if not existing:
+            blocked = BlockedDate(room_id=room_id, date=date_str, reason=reason)
+            await db.blocked_dates.insert_one(blocked.model_dump())
+            blocked_count += 1
+        current += timedelta(days=1)
+    
+    return {"message": f"{blocked_count} dates blocked successfully"}
+
+
+# ==================== COUPON ENDPOINTS ====================
+
+@api_router.post("/coupons")
+async def create_coupon(coupon_data: CouponCreate):
+    """Create a new coupon"""
+    # Check if code already exists
+    existing = await db.coupons.find_one({"code": coupon_data.code.upper()})
+    if existing:
+        raise HTTPException(status_code=400, detail="Coupon code already exists")
+    
+    coupon = Coupon(
+        code=coupon_data.code.upper(),
+        discount_type=coupon_data.discount_type,
+        discount_value=coupon_data.discount_value,
+        min_nights=coupon_data.min_nights,
+        max_uses=coupon_data.max_uses,
+        valid_from=coupon_data.valid_from,
+        valid_until=coupon_data.valid_until,
+        description_it=coupon_data.description_it,
+        description_en=coupon_data.description_en
+    )
+    
+    coupon_dict = coupon.model_dump()
+    coupon_dict["created_at"] = coupon_dict["created_at"].isoformat()
+    await db.coupons.insert_one(coupon_dict)
+    
+    return {"message": "Coupon created successfully", "coupon_id": coupon.id}
+
+@api_router.get("/coupons")
+async def get_all_coupons():
+    """Get all coupons (admin)"""
+    coupons = await db.coupons.find({}, {"_id": 0}).to_list(100)
+    return coupons
+
+@api_router.get("/coupons/validate/{code}")
+async def validate_coupon(code: str, nights: int = 1):
+    """Validate a coupon code"""
+    coupon = await db.coupons.find_one({"code": code.upper(), "is_active": True}, {"_id": 0})
+    
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Coupon not found or inactive")
+    
+    # Check minimum nights
+    if nights < coupon.get("min_nights", 1):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Minimum {coupon['min_nights']} nights required for this coupon"
+        )
+    
+    # Check max uses
+    if coupon.get("max_uses") and coupon.get("uses_count", 0) >= coupon["max_uses"]:
+        raise HTTPException(status_code=400, detail="Coupon has reached maximum uses")
+    
+    # Check validity dates
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if coupon.get("valid_from") and today < coupon["valid_from"]:
+        raise HTTPException(status_code=400, detail="Coupon not yet valid")
+    if coupon.get("valid_until") and today > coupon["valid_until"]:
+        raise HTTPException(status_code=400, detail="Coupon has expired")
+    
+    return {
+        "valid": True,
+        "discount_type": coupon["discount_type"],
+        "discount_value": coupon["discount_value"],
+        "description_it": coupon.get("description_it"),
+        "description_en": coupon.get("description_en")
+    }
+
+@api_router.put("/coupons/{coupon_id}")
+async def update_coupon(coupon_id: str, is_active: Optional[bool] = None):
+    """Update coupon (toggle active status)"""
+    update_data = {}
+    if is_active is not None:
+        update_data["is_active"] = is_active
+    
+    if update_data:
+        await db.coupons.update_one({"id": coupon_id}, {"$set": update_data})
+    
+    return {"message": "Coupon updated successfully"}
+
+@api_router.delete("/coupons/{coupon_id}")
+async def delete_coupon(coupon_id: str):
+    """Delete a coupon"""
+    await db.coupons.delete_one({"id": coupon_id})
+    return {"message": "Coupon deleted successfully"}
+
 
 # ==================== BOOKING ENDPOINTS ====================
 
