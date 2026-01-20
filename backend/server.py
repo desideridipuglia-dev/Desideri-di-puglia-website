@@ -625,7 +625,41 @@ async def create_booking(booking_data: BookingCreate, request: Request):
         raise HTTPException(status_code=400, detail="Check-out must be after check-in")
     
     nights = (check_out - check_in).days
-    total_price = float(room["price_per_night"]) * nights
+    subtotal = float(room["price_per_night"]) * nights
+    discount_amount = 0.0
+    coupon_code = None
+    
+    # Apply coupon if provided
+    if booking_data.coupon_code:
+        coupon = await db.coupons.find_one({"code": booking_data.coupon_code.upper(), "is_active": True}, {"_id": 0})
+        if coupon:
+            # Validate coupon
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            is_valid = True
+            
+            if nights < coupon.get("min_nights", 1):
+                is_valid = False
+            if coupon.get("max_uses") and coupon.get("uses_count", 0) >= coupon["max_uses"]:
+                is_valid = False
+            if coupon.get("valid_from") and today < coupon["valid_from"]:
+                is_valid = False
+            if coupon.get("valid_until") and today > coupon["valid_until"]:
+                is_valid = False
+            
+            if is_valid:
+                coupon_code = coupon["code"]
+                if coupon["discount_type"] == "percentage":
+                    discount_amount = subtotal * (coupon["discount_value"] / 100)
+                else:  # fixed
+                    discount_amount = min(coupon["discount_value"], subtotal)
+                
+                # Increment coupon usage
+                await db.coupons.update_one(
+                    {"code": coupon["code"]},
+                    {"$inc": {"uses_count": 1}}
+                )
+    
+    total_price = subtotal - discount_amount
     
     # Check for conflicting bookings
     existing = await db.bookings.find_one({
@@ -649,7 +683,9 @@ async def create_booking(booking_data: BookingCreate, request: Request):
         check_out=booking_data.check_out,
         num_guests=booking_data.num_guests,
         total_price=total_price,
-        notes=booking_data.notes
+        notes=booking_data.notes,
+        coupon_code=coupon_code,
+        discount_amount=discount_amount
     )
     
     # Create Stripe checkout session
