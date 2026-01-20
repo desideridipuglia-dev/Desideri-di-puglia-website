@@ -78,11 +78,43 @@ const BookingPage = () => {
 
   const selectedRoomData = rooms.find(r => r.id === selectedRoom);
   const nights = dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) : 0;
-  const totalPrice = selectedRoomData ? nights * selectedRoomData.price_per_night : 0;
+  const subtotal = selectedRoomData ? nights * selectedRoomData.price_per_night : 0;
+  
+  // Calculate discount
+  let discountAmount = 0;
+  if (couponDiscount && couponStatus === 'valid') {
+    if (couponDiscount.discount_type === 'percentage') {
+      discountAmount = subtotal * (couponDiscount.discount_value / 100);
+    } else {
+      discountAmount = Math.min(couponDiscount.discount_value, subtotal);
+    }
+  }
+  const totalPrice = subtotal - discountAmount;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Reset coupon status when code changes
+    if (name === 'coupon_code') {
+      setCouponStatus(null);
+      setCouponDiscount(null);
+    }
+  };
+  
+  const validateCoupon = async () => {
+    if (!formData.coupon_code) return;
+    
+    try {
+      const response = await axios.get(`${API}/coupons/validate/${formData.coupon_code}?nights=${nights}`);
+      setCouponStatus('valid');
+      setCouponDiscount(response.data);
+      toast.success(language === 'it' ? 'Coupon applicato!' : 'Coupon applied!');
+    } catch (error) {
+      setCouponStatus('invalid');
+      setCouponDiscount(null);
+      toast.error(error.response?.data?.detail || (language === 'it' ? 'Coupon non valido' : 'Invalid coupon'));
+    }
   };
 
   const isDateUnavailable = (date) => {
