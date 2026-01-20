@@ -8,7 +8,7 @@ import { Button } from '../components/ui/button';
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_3750f7fe-2e26-4c3d-b65d-c6df82c61a10/artifacts/2la4ul28_unnamed.png";
 
 const Navbar = () => {
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
