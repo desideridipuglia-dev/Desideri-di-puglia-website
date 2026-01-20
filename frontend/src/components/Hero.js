@@ -1,21 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import { MapPin, ChevronDown } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import axios from 'axios';
 
-const LOGO_URL = "https://customer-assets.emergentagent.com/job_3750f7fe-2e26-4c3d-b65d-c6df82c61a10/artifacts/2la4ul28_unnamed.png";
-const HERO_IMAGE = "https://images.unsplash.com/photo-1614323777193-379d5e6797f7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxwdWdsaWElMjBjb2FzdGxpbmUlMjBhZHJpYXRpYyUyMHNlYSUyMGRlZXAlMjBibHVlfGVufDB8fHx8MTc2ODg4NTYyNnww&ixlib=rb-4.1.0&q=85";
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const DEFAULT_HERO = "https://images.unsplash.com/photo-1614323777193-379d5e6797f7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxwdWdsaWElMjBjb2FzdGxpbmUlMjBhZHJpYXRpYyUyMHNlYSUyMGRlZXAlMjBibHVlfGVufDB8fHx8MTc2ODg4NTYyNnww&ixlib=rb-4.1.0&q=85";
 
 const Hero = ({ onScrollToRooms }) => {
   const { t } = useLanguage();
+  const [heroImage, setHeroImage] = useState(DEFAULT_HERO);
+
+  useEffect(() => {
+    const fetchSiteImages = async () => {
+      try {
+        const response = await axios.get(`${API}/site-images`);
+        if (response.data.hero_image) {
+          setHeroImage(response.data.hero_image);
+        }
+      } catch (error) {
+        console.log('Using default hero image');
+      }
+    };
+    fetchSiteImages();
+  }, []);
 
   return (
     <section data-testid="hero-section" className="relative h-screen w-full overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0">
         <img 
-          src={HERO_IMAGE} 
+          src={heroImage} 
           alt="Puglia Coastline" 
           className="w-full h-full object-cover"
         />
