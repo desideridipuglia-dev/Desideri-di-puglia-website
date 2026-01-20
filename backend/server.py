@@ -136,6 +136,33 @@ class BlockedDate(BaseModel):
     date: str  # ISO date string
     reason: Optional[str] = None
 
+class Coupon(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    code: str  # Unique coupon code
+    discount_type: str = "percentage"  # percentage or fixed
+    discount_value: float  # 10 = 10% or €10
+    min_nights: int = 1  # Minimum nights required
+    max_uses: Optional[int] = None  # None = unlimited
+    uses_count: int = 0
+    valid_from: Optional[str] = None  # ISO date
+    valid_until: Optional[str] = None  # ISO date
+    is_active: bool = True
+    description_it: Optional[str] = None
+    description_en: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CouponCreate(BaseModel):
+    code: str
+    discount_type: str = "percentage"
+    discount_value: float
+    min_nights: int = 1
+    max_uses: Optional[int] = None
+    valid_from: Optional[str] = None
+    valid_until: Optional[str] = None
+    description_it: Optional[str] = None
+    description_en: Optional[str] = None
+
 class AdminSettings(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = "settings"
