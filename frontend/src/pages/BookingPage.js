@@ -337,6 +337,44 @@ const BookingPage = () => {
                         data-testid="booking-notes"
                       />
                     </div>
+                    
+                    {/* Coupon Code */}
+                    <div className="md:col-span-2">
+                      <Label htmlFor="coupon_code">
+                        {language === 'it' ? 'Codice sconto (opzionale)' : 'Discount code (optional)'}
+                      </Label>
+                      <div className="flex gap-2 mt-2">
+                        <Input
+                          id="coupon_code"
+                          name="coupon_code"
+                          value={formData.coupon_code}
+                          onChange={handleInputChange}
+                          placeholder={language === 'it' ? 'Inserisci codice' : 'Enter code'}
+                          className={`flex-1 rounded-none border-puglia-stone focus:border-adriatic-blue uppercase ${
+                            couponStatus === 'valid' ? 'border-green-500 bg-green-50' : 
+                            couponStatus === 'invalid' ? 'border-red-500 bg-red-50' : ''
+                          }`}
+                          data-testid="coupon-input"
+                        />
+                        <Button
+                          type="button"
+                          onClick={validateCoupon}
+                          disabled={!formData.coupon_code || nights === 0}
+                          variant="outline"
+                          className="border-adriatic-blue text-adriatic-blue hover:bg-adriatic-blue hover:text-white"
+                          data-testid="apply-coupon-btn"
+                        >
+                          {language === 'it' ? 'Applica' : 'Apply'}
+                        </Button>
+                      </div>
+                      {couponStatus === 'valid' && couponDiscount && (
+                        <p className="text-green-600 text-sm mt-1">
+                          ✓ {couponDiscount.discount_type === 'percentage' 
+                            ? `${couponDiscount.discount_value}% di sconto applicato!` 
+                            : `€${couponDiscount.discount_value} di sconto applicato!`}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               </form>
