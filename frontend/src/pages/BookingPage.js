@@ -425,11 +425,23 @@ const BookingPage = () => {
                       <span className="text-muted-foreground">
                         €{selectedRoomData.price_per_night} x {nights} {t('booking.nights')}
                       </span>
-                      <span className="text-adriatic-blue">€{totalPrice}</span>
+                      <span className="text-adriatic-blue">€{subtotal}</span>
                     </div>
+                    
+                    {/* Show discount if applied */}
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>
+                          {language === 'it' ? 'Sconto coupon' : 'Coupon discount'}
+                          {couponDiscount?.discount_type === 'percentage' && ` (${couponDiscount.discount_value}%)`}
+                        </span>
+                        <span>-€{discountAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    
                     <div className="flex justify-between text-lg pt-4 border-t border-puglia-stone/30">
                       <span className="font-heading text-adriatic-blue">{t('booking.total')}</span>
-                      <span className="font-heading text-antique-gold text-2xl">€{totalPrice}</span>
+                      <span className="font-heading text-antique-gold text-2xl">€{totalPrice.toFixed(2)}</span>
                     </div>
                   </div>
                 )}
