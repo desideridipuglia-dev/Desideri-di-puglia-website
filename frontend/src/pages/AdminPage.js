@@ -83,6 +83,15 @@ const AdminPage = () => {
     }
   };
 
+  const handleResendConfirmation = async (bookingId) => {
+    try {
+      await axios.post(`${API}/bookings/${bookingId}/resend-confirmation`);
+      toast.success('Email di conferma reinviata');
+    } catch (error) {
+      toast.error('Errore nell\'invio email');
+    }
+  };
+
   const tabs = [
     { id: 'rooms', label: 'Stanze', icon: Bed },
     { id: 'bookings', label: 'Prenotazioni', icon: Calendar },
