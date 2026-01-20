@@ -2,21 +2,37 @@
 
 /* Logo styles */
 .logo-container {
-  @apply relative;
+  position: relative;
 }
 
 /* Navigation active state */
 .nav-link-active {
-  @apply text-antique-gold;
+  color: #C5A059;
 }
 
 /* Room card styles */
 .room-card {
-  @apply group relative overflow-hidden bg-white shadow-sm hover:shadow-lg transition-all duration-500 border border-puglia-stone/50;
+  position: relative;
+  overflow: hidden;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  transition: all 0.5s ease;
+  border: 1px solid rgba(229, 224, 216, 0.5);
+}
+
+.room-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
 }
 
 .room-card-image {
-  @apply w-full h-64 object-cover transition-transform duration-700 group-hover:scale-105;
+  width: 100%;
+  height: 16rem;
+  object-fit: cover;
+  transition: transform 0.7s ease;
+}
+
+.room-card:hover .room-card-image {
+  transform: scale(1.05);
 }
 
 /* Gallery grid */
@@ -37,98 +53,167 @@
 
 /* Calendar styles */
 .calendar-day-unavailable {
-  @apply bg-red-100 text-red-400 cursor-not-allowed line-through;
+  background-color: #fee2e2;
+  color: #f87171;
+  cursor: not-allowed;
+  text-decoration: line-through;
 }
 
 .calendar-day-selected {
-  @apply bg-adriatic-blue text-white;
+  background-color: #0A2342;
+  color: white;
 }
 
 /* Review stars */
 .star-filled {
-  @apply text-antique-gold;
+  color: #C5A059;
 }
 
 .star-empty {
-  @apply text-puglia-stone;
+  color: #E5E0D8;
 }
 
 /* Amenity icons */
 .amenity-icon {
-  @apply w-12 h-12 flex items-center justify-center bg-puglia-sand text-adriatic-blue rounded-none border border-puglia-stone;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #F9F8F4;
+  color: #0A2342;
+  border: 1px solid #E5E0D8;
 }
 
 /* Section divider */
 .section-divider {
-  @apply w-24 h-0.5 bg-antique-gold mx-auto my-8;
+  width: 6rem;
+  height: 2px;
+  background-color: #C5A059;
+  margin: 2rem auto;
 }
 
 /* Map container */
 .map-container {
-  @apply w-full h-96 bg-puglia-stone;
+  width: 100%;
+  height: 24rem;
+  background-color: #E5E0D8;
 }
 
 /* Admin panel styles */
 .admin-sidebar {
-  @apply w-64 bg-adriatic-blue text-white min-h-screen p-6;
+  width: 16rem;
+  background-color: #0A2342;
+  color: white;
+  min-height: 100vh;
+  padding: 1.5rem;
 }
 
 .admin-nav-item {
-  @apply block py-3 px-4 text-white/80 hover:text-white hover:bg-white/10 transition-colors;
+  display: block;
+  padding: 0.75rem 1rem;
+  color: rgba(255,255,255,0.8);
+  transition: all 0.3s ease;
+}
+
+.admin-nav-item:hover {
+  color: white;
+  background-color: rgba(255,255,255,0.1);
 }
 
 .admin-nav-item-active {
-  @apply bg-antique-gold text-adriatic-blue;
+  background-color: #C5A059;
+  color: #0A2342;
 }
 
 /* Table styles */
 .admin-table {
-  @apply w-full text-left;
+  width: 100%;
+  text-align: left;
 }
 
 .admin-table th {
-  @apply py-3 px-4 bg-puglia-sand text-adriatic-blue font-medium text-sm uppercase tracking-wider;
+  padding: 0.75rem 1rem;
+  background-color: #F9F8F4;
+  color: #0A2342;
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .admin-table td {
-  @apply py-4 px-4 border-b border-puglia-stone;
+  padding: 1rem;
+  border-bottom: 1px solid #E5E0D8;
 }
 
 /* Status badges */
 .status-badge {
-  @apply inline-block px-3 py-1 text-xs font-medium uppercase tracking-wide;
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .status-pending {
-  @apply bg-yellow-100 text-yellow-800;
+  background-color: #fef3c7;
+  color: #92400e;
 }
 
 .status-confirmed {
-  @apply bg-green-100 text-green-800;
+  background-color: #d1fae5;
+  color: #065f46;
 }
 
 .status-cancelled {
-  @apply bg-red-100 text-red-800;
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
 .status-completed {
-  @apply bg-blue-100 text-blue-800;
+  background-color: #dbeafe;
+  color: #1e40af;
 }
 
 /* Loading spinner */
 .spinner {
-  @apply animate-spin h-8 w-8 border-4 border-puglia-stone border-t-antique-gold rounded-full;
+  animation: spin 1s linear infinite;
+  height: 2rem;
+  width: 2rem;
+  border-width: 4px;
+  border-style: solid;
+  border-color: #E5E0D8;
+  border-top-color: #C5A059;
+  border-radius: 9999px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Language switch */
 .lang-switch {
-  @apply flex items-center gap-2 text-sm uppercase tracking-wider cursor-pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
 }
 
 .lang-active {
-  @apply text-antique-gold font-semibold;
+  color: #C5A059;
+  font-weight: 600;
 }
 
 .lang-inactive {
-  @apply text-adriatic-blue/60 hover:text-adriatic-blue;
+  color: rgba(10, 35, 66, 0.6);
+}
+
+.lang-inactive:hover {
+  color: #0A2342;
 }
