@@ -66,16 +66,26 @@ const Navbar = () => {
 
           {/* Right side */}
           <div className="flex items-center gap-6">
-            {/* Language Toggle */}
-            <button 
-              onClick={toggleLanguage}
-              className={`lang-switch ${textColor}`}
-              data-testid="language-toggle"
-            >
-              <span className={language === 'it' ? 'lang-active' : 'lang-inactive'}>IT</span>
-              <span className="text-antique-gold">/</span>
-              <span className={language === 'en' ? 'lang-active' : 'lang-inactive'}>EN</span>
-            </button>
+            {/* Language Toggle with Flags */}
+            <div className="flex items-center gap-2" data-testid="language-toggle">
+              <button 
+                onClick={() => setLanguage('it')}
+                className={`flex items-center gap-1.5 px-2 py-1 transition-all ${language === 'it' ? 'opacity-100' : 'opacity-50 hover:opacity-75'}`}
+                title="Italiano"
+              >
+                <span className="text-lg">🇮🇹</span>
+                <span className={`text-xs uppercase tracking-wider ${textColor} ${language === 'it' ? 'font-semibold' : ''}`}>IT</span>
+              </button>
+              <span className={`${textColor} opacity-30`}>|</span>
+              <button 
+                onClick={() => setLanguage('en')}
+                className={`flex items-center gap-1.5 px-2 py-1 transition-all ${language === 'en' ? 'opacity-100' : 'opacity-50 hover:opacity-75'}`}
+                title="English"
+              >
+                <span className="text-lg">🇬🇧</span>
+                <span className={`text-xs uppercase tracking-wider ${textColor} ${language === 'en' ? 'font-semibold' : ''}`}>EN</span>
+              </button>
+            </div>
 
             {/* Book Now Button */}
             <Link to="/booking" className="hidden md:block">
