@@ -1,0 +1,135 @@
+{
+  "identity": {
+    "name": "E1: The Anti-AI Designer",
+    "mission": "Create a 'Quiet Luxury' digital experience for Desideri di Puglia that feels like a sun-drenched Puglian afternoon—warm, historic, and exclusive.",
+    "principles": [
+      "Fusion over Imitation: Mix historic stone aesthetics with modern Swiss precision.",
+      "Emotion First: Every interaction should feel like a 'welcome home'.",
+      "Content is King: The rooms are the heroes; the UI is the frame.",
+      "Negative Space: Luxury is the absence of clutter.",
+      "Contrast: Deep sea blues against warm limestone."
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "heading": "Playfair Display",
+      "body": "Manrope",
+      "accent": "Italiana"
+    },
+    "weights": {
+      "heading": "font-medium",
+      "body": "font-light",
+      "bold": "font-semibold"
+    },
+    "usage": {
+      "h1": "text-5xl md:text-7xl font-heading tracking-tight leading-none text-primary",
+      "h2": "text-3xl md:text-5xl font-heading tracking-tight text-primary mb-8",
+      "h3": "text-xl md:text-2xl font-heading text-primary/90",
+      "body": "text-base md:text-lg font-body text-muted-foreground leading-relaxed",
+      "caption": "text-xs font-accent uppercase tracking-[0.2em] text-accent-foreground/70"
+    },
+    "installation": "Import fonts via Google Fonts in index.css: @import url('https://fonts.googleapis.com/css2?family=Italiana&family=Manrope:wght@200;300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap');"
+  },
+  "colors": {
+    "palette": {
+      "primary": "#0A2342",
+      "secondary": "#C5A059",
+      "background": "#F9F8F4",
+      "surface": "#FFFFFF",
+      "text": "#1A1A1A",
+      "muted": "#8C8C8C",
+      "border": "#E5E0D8"
+    },
+    "tailwind_config": {
+      "colors": {
+        "puglia-sand": "#F9F8F4",
+        "puglia-stone": "#E5E0D8",
+        "adriatic-blue": "#0A2342",
+        "antique-gold": "#C5A059",
+        "charcoal": "#1A1A1A"
+      }
+    },
+    "usage": {
+      "background": "bg-puglia-sand",
+      "text_primary": "text-adriatic-blue",
+      "text_secondary": "text-charcoal",
+      "accent": "text-antique-gold",
+      "button_primary": "bg-adriatic-blue text-white hover:bg-adriatic-blue/90",
+      "button_outline": "border border-adriatic-blue text-adriatic-blue hover:bg-adriatic-blue hover:text-white"
+    }
+  },
+  "layout": {
+    "container": "max-w-7xl mx-auto px-6 md:px-12",
+    "section_spacing": "py-24 md:py-32",
+    "grid_systems": {
+      "bento_gallery": "grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 auto-rows-[300px]",
+      "feature_list": "grid grid-cols-1 md:grid-cols-3 gap-12"
+    },
+    "z_index": {
+      "nav": "z-50",
+      "modal": "z-50",
+      "dropdown": "z-40",
+      "content": "z-10",
+      "background": "z-0"
+    }
+  },
+  "components": {
+    "buttons": {
+      "base": "rounded-none px-8 py-4 text-sm uppercase tracking-widest transition-all duration-300",
+      "primary": "bg-adriatic-blue text-white hover:bg-antique-gold hover:text-white shadow-lg hover:shadow-xl",
+      "secondary": "bg-transparent border border-adriatic-blue text-adriatic-blue hover:bg-adriatic-blue hover:text-white"
+    },
+    "cards": {
+      "room_card": "group relative overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-500 border border-puglia-stone/50",
+      "feature_card": "p-8 bg-white/50 backdrop-blur-sm border border-white/20 hover:bg-white transition-colors"
+    },
+    "navigation": {
+      "header": "fixed top-0 w-full z-50 transition-all duration-300 bg-white/80 backdrop-blur-md border-b border-puglia-stone/30",
+      "link": "text-sm uppercase tracking-widest hover:text-antique-gold transition-colors"
+    },
+    "inputs": {
+      "base": "rounded-none border-b border-puglia-stone bg-transparent px-0 py-2 focus:border-adriatic-blue focus:ring-0 transition-colors placeholder:text-muted-foreground/50"
+    }
+  },
+  "motion": {
+    "libraries": ["framer-motion", "lenis"],
+    "rules": {
+      "scroll": "Implement Lenis for smooth, weighted scrolling.",
+      "reveal": "Use 'whileInView' with a slow ease-out (duration: 0.8s) for sections.",
+      "hover": "Images should scale slightly (1.05) on hover with a long duration (0.6s).",
+      "page_transition": "Simple opacity fade (0.4s)."
+    }
+  },
+  "images": {
+    "hero": {
+      "url": "https://images.unsplash.com/photo-1614323777193-379d5e6797f7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxwdWdsaWElMjBjb2FzdGxpbmUlMjBhZHJpYXRpYyUyMHNlYSUyMGRlZXAlMjBibHVlfGVufDB8fHx8MTc2ODg4NTYyNnww&ixlib=rb-4.1.0&q=85",
+      "alt": "Puglia Coastline Adriatic Sea",
+      "usage": "Full screen hero background with overlay"
+    },
+    "rooms": {
+      "nonna": {
+        "url": "https://images.unsplash.com/photo-1730322011993-592266c14831?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBwdWdsaWElMjBiZWRyb29tJTIwc3RvbmUlMjB3YWxscyUyMGludGVyaW9yfGVufDB8fHx8MTc2ODg4NTYyNHww&ixlib=rb-4.1.0&q=85",
+        "alt": "Stanza della Nonna - Stone Walls"
+      },
+      "pozzo": {
+        "url": "https://images.unsplash.com/photo-1730322046135-a754d71b7ec0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwyfHxsdXh1cnklMjBwdWdsaWElMjBiZWRyb29tJTIwc3RvbmUlMjB3YWxscyUyMGludGVyaW9yfGVufDB8fHx8MTc2ODg4NTYyNHww&ixlib=rb-4.1.0&q=85",
+        "alt": "Stanza del Pozzo - Rustic Luxury"
+      }
+    },
+    "location": {
+      "castle": "https://images.unsplash.com/photo-1652376172934-95d8d0a8ec47?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTF8MHwxfHNlYXJjaHwxfHxiYXJsZXR0YSUyMGNhc3RsZSUyMGZvcnRyZXNzJTIwc3RvbmUlMjB0ZXh0dXJlfGVufDB8fHx8MTc2ODg4NTYyOXww&ixlib=rb-4.1.0&q=85",
+      "sea": "https://images.unsplash.com/photo-1604224643783-8f09160c15e0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwzfHxwdWdsaWElMjBjb2FzdGxpbmUlMjBhZHJpYXRpYyUyMHNlYSUyMGRlZXAlMjBibHVlfGVufDB8fHx8MTc2ODg4NTYyNnww&ixlib=rb-4.1.0&q=85"
+    }
+  },
+  "universal_guidelines": [
+    "DO NOT use generic 'Inter' font. Use the specified font stack.",
+    "DO NOT use standard Bootstrap/Material shadows. Use subtle, large blurs.",
+    "DO NOT center everything. Use asymmetry to create tension.",
+    "Ensure all interactive elements have 'data-testid'.",
+    "Use 'sonner' for toasts.",
+    "Use 'lucide-react' for icons.",
+    "Mobile-first responsive design is mandatory.",
+    "Images must be optimized and lazy-loaded."
+  ],
+  "instructions_to_main_agent": "You are building a luxury B&B website. Focus on 'Quiet Luxury'. Use the provided color palette and typography strictly. The 'Stanza della Nonna' and 'Stanza del Pozzo' are the core products—showcase them with large, high-quality imagery. The booking flow should be seamless. Use the 'bento' grid for the gallery. Implement the admin panel with a clean, functional dashboard style (Archetype 4)."
+}
