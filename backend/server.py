@@ -696,6 +696,13 @@ async def stripe_webhook(request: Request):
         webhook_response = await stripe_checkout.handle_webhook(body, signature)
         
         if webhook_response.payment_status == "paid":
+            # Get booking before update
+            booking = await db.bookings.find_one(
+                {"stripe_session_id": webhook_response.session_id}, 
+                {"_id": 0}
+            )
+            previous_status = booking.get("payment_status") if booking else None
+            
             await db.bookings.update_one(
                 {"stripe_session_id": webhook_response.session_id},
                 {"$set": {
@@ -712,6 +719,12 @@ async def stripe_webhook(request: Request):
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }}
             )
+            
+            # Send confirmation email if first time confirmed
+            if previous_status != "paid" and booking:
+                room = await db.rooms.find_one({"id": booking["room_id"]}, {"_id": 0})
+                if room:
+                    await send_booking_confirmation_email(booking, room, "it")
         
         return {"status": "success"}
     except Exception as e:
