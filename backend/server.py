@@ -101,6 +101,19 @@ class RoomUpdate(BaseModel):
     description_it: Optional[str] = None
     description_en: Optional[str] = None
     images: Optional[List[RoomImage]] = None
+    name_it: Optional[str] = None
+    name_en: Optional[str] = None
+
+class SiteImages(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = "site_images"
+    hero_image: str = "https://images.unsplash.com/photo-1614323777193-379d5e6797f7?w=1920"
+    cta_background: str = "https://images.unsplash.com/photo-1652376172934-95d8d0a8ec47?w=1920"
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class SiteImagesUpdate(BaseModel):
+    hero_image: Optional[str] = None
+    cta_background: Optional[str] = None
 
 class Booking(BaseModel):
     model_config = ConfigDict(extra="ignore")
