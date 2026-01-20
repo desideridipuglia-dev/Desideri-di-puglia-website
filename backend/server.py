@@ -47,7 +47,32 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# ==================== AUTH FUNCTIONS ====================
+
+def hash_password(password: str) -> str:
+    """Hash password with SHA256"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def verify_admin(credentials: HTTPBasicCredentials = Depends(security)):
+    """Verify admin credentials"""
+    correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
+    correct_password = secrets.compare_digest(
+        hash_password(credentials.password), 
+        ADMIN_PASSWORD_HASH
+    )
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
 # ==================== MODELS ====================
+
+class AdminLogin(BaseModel):
+    username: str
+    password: str
 
 class RoomImage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
