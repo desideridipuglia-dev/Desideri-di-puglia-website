@@ -1,34 +1,134 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* App specific styles */
+
+/* Logo styles */
+.logo-container {
+  @apply relative;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+/* Navigation active state */
+.nav-link-active {
+  @apply text-antique-gold;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+/* Room card styles */
+.room-card {
+  @apply group relative overflow-hidden bg-white shadow-sm hover:shadow-lg transition-all duration-500 border border-puglia-stone/50;
 }
 
-.App-link {
-    color: #61dafb;
+.room-card-image {
+  @apply w-full h-64 object-cover transition-transform duration-700 group-hover:scale-105;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Gallery grid */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1rem;
+}
+
+.gallery-item-large {
+  grid-column: span 8;
+  grid-row: span 2;
+}
+
+.gallery-item-small {
+  grid-column: span 4;
+}
+
+/* Calendar styles */
+.calendar-day-unavailable {
+  @apply bg-red-100 text-red-400 cursor-not-allowed line-through;
+}
+
+.calendar-day-selected {
+  @apply bg-adriatic-blue text-white;
+}
+
+/* Review stars */
+.star-filled {
+  @apply text-antique-gold;
+}
+
+.star-empty {
+  @apply text-puglia-stone;
+}
+
+/* Amenity icons */
+.amenity-icon {
+  @apply w-12 h-12 flex items-center justify-center bg-puglia-sand text-adriatic-blue rounded-none border border-puglia-stone;
+}
+
+/* Section divider */
+.section-divider {
+  @apply w-24 h-0.5 bg-antique-gold mx-auto my-8;
+}
+
+/* Map container */
+.map-container {
+  @apply w-full h-96 bg-puglia-stone;
+}
+
+/* Admin panel styles */
+.admin-sidebar {
+  @apply w-64 bg-adriatic-blue text-white min-h-screen p-6;
+}
+
+.admin-nav-item {
+  @apply block py-3 px-4 text-white/80 hover:text-white hover:bg-white/10 transition-colors;
+}
+
+.admin-nav-item-active {
+  @apply bg-antique-gold text-adriatic-blue;
+}
+
+/* Table styles */
+.admin-table {
+  @apply w-full text-left;
+}
+
+.admin-table th {
+  @apply py-3 px-4 bg-puglia-sand text-adriatic-blue font-medium text-sm uppercase tracking-wider;
+}
+
+.admin-table td {
+  @apply py-4 px-4 border-b border-puglia-stone;
+}
+
+/* Status badges */
+.status-badge {
+  @apply inline-block px-3 py-1 text-xs font-medium uppercase tracking-wide;
+}
+
+.status-pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.status-confirmed {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-cancelled {
+  @apply bg-red-100 text-red-800;
+}
+
+.status-completed {
+  @apply bg-blue-100 text-blue-800;
+}
+
+/* Loading spinner */
+.spinner {
+  @apply animate-spin h-8 w-8 border-4 border-puglia-stone border-t-antique-gold rounded-full;
+}
+
+/* Language switch */
+.lang-switch {
+  @apply flex items-center gap-2 text-sm uppercase tracking-wider cursor-pointer;
+}
+
+.lang-active {
+  @apply text-antique-gold font-semibold;
+}
+
+.lang-inactive {
+  @apply text-adriatic-blue/60 hover:text-adriatic-blue;
 }
