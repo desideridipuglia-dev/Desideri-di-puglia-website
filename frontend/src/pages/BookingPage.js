@@ -146,7 +146,8 @@ const BookingPage = () => {
         check_out: format(dateRange.to, 'yyyy-MM-dd'),
         num_guests: parseInt(formData.num_guests),
         notes: formData.notes || null,
-        origin_url: window.location.origin
+        origin_url: window.location.origin,
+        coupon_code: couponStatus === 'valid' ? formData.coupon_code : null
       };
 
       const response = await axios.post(`${API}/bookings`, bookingData);
