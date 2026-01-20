@@ -581,6 +581,10 @@ async def check_booking_status(session_id: str, request: Request):
     try:
         status = await stripe_checkout.get_checkout_status(session_id)
         
+        # Get booking before update to check if email was already sent
+        booking = await db.bookings.find_one({"stripe_session_id": session_id}, {"_id": 0})
+        previous_status = booking.get("payment_status") if booking else None
+        
         # Update booking status
         if status.payment_status == "paid":
             await db.bookings.update_one(
@@ -599,6 +603,13 @@ async def check_booking_status(session_id: str, request: Request):
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }}
             )
+            
+            # Send confirmation email only if this is the first time payment is confirmed
+            if previous_status != "paid" and booking:
+                room = await db.rooms.find_one({"id": booking["room_id"]}, {"_id": 0})
+                if room:
+                    await send_booking_confirmation_email(booking, room, "it")
+                    
         elif status.status == "expired":
             await db.bookings.update_one(
                 {"stripe_session_id": session_id},
