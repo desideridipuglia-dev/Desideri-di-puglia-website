@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { format, differenceInDays, addDays, isBefore, isAfter, isSameDay } from 'date-fns';
 import { it, enUS } from 'date-fns/locale';
-import { CalendarIcon, Users, ArrowRight, Loader2 } from 'lucide-react';
+import { CalendarIcon, Users, ArrowRight, Loader2, Tag } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
