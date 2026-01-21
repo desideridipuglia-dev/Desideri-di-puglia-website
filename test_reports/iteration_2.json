@@ -1,0 +1,63 @@
+{
+  "summary": "Completed comprehensive testing of new features: Dynamic pricing system, Upsells system, and Stay reason field. All 14 backend API tests passed (100%). Frontend UI testing confirmed all features working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "API /api/stay-reasons - returns 7 stay reason options (vacanza, romantico, famiglia, etc.)",
+    "API /api/upsells - returns all upsells with correct structure",
+    "API /api/upsells?active_only=true - filters to active upsells only",
+    "API /api/upsells - upsell 'pulizia-extra' has min_nights=7 (only for stays >= 7 nights)",
+    "API /api/upsells POST - creates new upsell successfully",
+    "API /api/upsells PUT - toggles upsell active status",
+    "API /api/custom-prices POST - sets custom prices for date range",
+    "API /api/custom-prices GET - retrieves custom prices for room",
+    "API /api/custom-prices DELETE - deletes specific custom price",
+    "API /api/bookings POST - creates booking with upsells and stay_reason",
+    "API /api/bookings - calculates price correctly with custom prices",
+    "API /api/availability - includes custom_prices in response",
+    "Booking page: Room selection works (Stanza della Nonna, Stanza del Pozzo)",
+    "Booking page: Calendar date selection works",
+    "Booking page: Stay reason field present ('Motivo del soggiorno')",
+    "Booking page: Upsells section appears after date selection",
+    "Booking page: Upsells display with persuasive descriptions (Bollicine di Benvenuto, Sapori di Puglia, etc.)",
+    "Booking page: Upsell selection shows checkmark",
+    "Booking page: Summary updates with selected upsells (Extra selezionati)",
+    "Booking page: Total price calculates correctly with upsells",
+    "Admin page: Login works with admin/admin credentials",
+    "Admin page: Prezzi tab shows dynamic pricing form",
+    "Admin page: Prezzi tab has room selection, calendar, price input, reason input",
+    "Admin page: Upsells tab shows upsell management",
+    "Admin page: Upsells tab has create new upsell form",
+    "Admin page: Upsells tab lists existing upsells with toggle buttons"
+  ],
+  "test_report_links": [
+    "/app/tests/test_new_features.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Minor: AdminPage.js has ESLint warning about missing dependency 'fetchData' in useEffect - not critical but should be addressed"
+  ],
+  "updated_files": [
+    "/app/tests/test_new_features.py"
+  ],
+  "success_rate": {
+    "backend": "100% (14/14 tests passed)",
+    "frontend": "100% (all features verified)"
+  },
+  "test_credentials": {
+    "admin_username": "admin",
+    "admin_password": "admin"
+  },
+  "seed_data_creation": "Default upsells initialized on app startup (6 upsells: prosecco, vino-locale, sup-mare, spesa-arrivo, pulizia-extra, colazione-premium)",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All new features (dynamic pricing, upsells, stay reason) are fully functional. The booking route is /booking (not /prenota). Admin login uses admin/admin credentials. Upsell 'pulizia-extra' only appears for stays >= 7 nights."
+}
