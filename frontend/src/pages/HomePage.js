@@ -14,6 +14,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const HomePage = () => {
   const { t } = useLanguage();
+  // Inizializziamo sempre come array vuoti per sicurezza
   const [rooms, setRooms] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,16 +23,30 @@ const HomePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log("Fetching data from:", API);
         const [roomsRes, reviewsRes] = await Promise.all([
           axios.get(`${API}/rooms`),
           axios.get(`${API}/reviews?approved_only=true`)
         ]);
-        // Aggiungiamo un controllo di sicurezza qui: se data è null, usiamo array vuoto
-        setRooms(roomsRes.data || []);
-        setReviews(reviewsRes.data || []);
+
+        // BLINDATURA 1: Controlliamo se è davvero un array prima di salvare
+        if (Array.isArray(roomsRes.data)) {
+            setRooms(roomsRes.data);
+        } else {
+            console.error("Rooms data is not an array:", roomsRes.data);
+            setRooms([]); // Fallback array vuoto
+        }
+
+        if (Array.isArray(reviewsRes.data)) {
+            setReviews(reviewsRes.data);
+        } else {
+             console.error("Reviews data is not an array:", reviewsRes.data);
+             setReviews([]); // Fallback array vuoto
+        }
+
       } catch (error) {
         console.error('Error fetching data:', error);
-        // In caso di errore, manteniamo gli array vuoti per non rompere la UI
+        // In caso di errore rete, array vuoti
         setRooms([]);
         setReviews([]);
       } finally {
@@ -45,50 +60,46 @@ const HomePage = () => {
     roomsRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Sample reviews for demo
   const demoReviews = [
     {
       id: '1',
       guest_name: 'Marco B.',
       rating: 5,
-      comment_it: 'Un soggiorno indimenticabile. La Stanza della Nonna è un piccolo gioiello, curata nei minimi dettagli. La posizione è perfetta per esplorare Barletta.',
-      comment_en: 'An unforgettable stay. Grandmother\'s Room is a little gem, carefully curated in every detail. The location is perfect for exploring Barletta.',
+      comment_it: 'Un soggiorno indimenticabile. La Stanza della Nonna è un piccolo gioiello.',
+      comment_en: 'An unforgettable stay. Grandmother\'s Room is a little gem.',
       created_at: '2024-11-15'
     },
     {
       id: '2',
       guest_name: 'Sarah L.',
       rating: 5,
-      comment_it: 'Esperienza di lusso autentico. I proprietari sono stati gentilissimi e la colazione era deliziosa. Torneremo sicuramente!',
-      comment_en: 'Authentic luxury experience. The owners were very kind and breakfast was delicious. We will definitely come back!',
+      comment_it: 'Esperienza di lusso autentico. I proprietari sono stati gentilissimi.',
+      comment_en: 'Authentic luxury experience. The owners were very kind.',
       created_at: '2024-10-20'
     },
     {
       id: '3',
       guest_name: 'Giovanni R.',
       rating: 5,
-      comment_it: 'La Stanza del Pozzo ha superato ogni aspettativa. L\'atmosfera è magica, un perfetto mix di storia e comfort moderno.',
-      comment_en: 'The Well Room exceeded all expectations. The atmosphere is magical, a perfect mix of history and modern comfort.',
+      comment_it: 'La Stanza del Pozzo ha superato ogni aspettativa.',
+      comment_en: 'The Well Room exceeded all expectations.',
       created_at: '2024-09-05'
     }
   ];
 
-  // MODIFICA 1: Controllo di sicurezza su reviews (aggiunto reviews && ...)
-  const displayReviews = (reviews && reviews.length > 0) ? reviews : demoReviews;
+  // BLINDATURA 2: Assicuriamoci che displayReviews sia un array valido
+  const safeReviews = Array.isArray(reviews) && reviews.length > 0 ? reviews : demoReviews;
 
   return (
     <div data-testid="home-page">
-      {/* Hero Section */}
       <Hero onScrollToRooms={scrollToRooms} />
 
-      {/* Rooms Section */}
       <section 
         ref={roomsRef}
         data-testid="rooms-section" 
         className="py-24 md:py-32 bg-puglia-sand"
       >
         <div className="max-w-7xl mx-auto px-6 md:px-12">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -105,36 +116,32 @@ const HomePage = () => {
             <div className="section-divider" />
           </motion.div>
 
-          {/* Rooms Grid */}
           {loading ? (
             <div className="flex justify-center">
               <div className="spinner" />
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* MODIFICA 2: Aggiunto il punto interrogativo (rooms?.map) */}
-              {rooms?.map((room, index) => (
-                <RoomCard key={room.id} room={room} index={index} />
-              ))}
-              
-              {/* Fallback visivo se non ci sono stanze caricate */}
-              {(!rooms || rooms.length === 0) && (
-                 <div className="col-span-full text-center text-gray-500 italic">
-                   No rooms available at the moment.
-                 </div>
+              {/* BLINDATURA 3: Renderizziamo SOLO se è un array e ha elementi */}
+              {Array.isArray(rooms) && rooms.length > 0 ? (
+                rooms.map((room, index) => (
+                  <RoomCard key={room.id} room={room} index={index} />
+                ))
+              ) : (
+                <div className="col-span-full text-center text-gray-500 italic py-10">
+                   {/* Messaggio temporaneo finché il backend non è collegato */}
+                   Le nostre stanze saranno presto disponibili online.
+                </div>
               )}
             </div>
           )}
         </div>
       </section>
 
-      {/* Services Section */}
       <ServicesSection />
 
-      {/* Reviews Section */}
       <section data-testid="reviews-preview-section" className="py-24 md:py-32 bg-puglia-sand">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -151,15 +158,13 @@ const HomePage = () => {
             <div className="section-divider" />
           </motion.div>
 
-          {/* Reviews Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {/* MODIFICA 3: Aggiunto il punto interrogativo (displayReviews?.slice) */}
-            {displayReviews?.slice(0, 3).map((review, index) => (
+            {/* BLINDATURA 4: Slice e Map protetti */}
+            {Array.isArray(safeReviews) && safeReviews.slice(0, 3).map((review, index) => (
               <ReviewCard key={review.id} review={review} index={index} />
             ))}
           </div>
 
-          {/* View All Button */}
           <div className="text-center">
             <Link to="/reviews">
               <Button 
@@ -175,7 +180,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="relative py-24 md:py-32 overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center"
