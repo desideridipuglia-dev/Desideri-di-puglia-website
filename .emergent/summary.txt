@@ -1,0 +1,184 @@
+<analysis>**original_problem_statement:**
+L'utente desidera creare un sito web di prenotazioni di lusso per il suo B&B, Desideri di Puglia, situato a Barletta.
+
+**PRODUCT REQUIREMENTS:**
+- **Nome B&B:** Desideri di Puglia
+- **Stanze:** Stanza della Nonna e Stanza del Pozzo, entrambe per un massimo di 3 persone.
+- **Stile:** Lusso, boutique, con animazioni e un'estetica di alto livello.
+- **Lingue:** Italiano e Inglese, con un selettore a bandierine.
+- **Funzionalità di Base:**
+    - Sistema di prenotazione con calendario per la disponibilità.
+    - Galleria fotografica per le stanze e il sito.
+    - Sezione recensioni (lasciabili solo a fine soggiorno).
+    - L'email fornita in fase di prenotazione registra automaticamente l'utente.
+- **Pagamenti:**
+    - Integrazione con Stripe.
+    - Sistema di coupon sconto.
+    - Upsell intelligenti al checkout (es. Trasforma il tuo arrivo in un momento speciale invece di Aggiungi prosecco).
+    - Un upsell per la pulizia extra deve apparire solo per soggiorni di 7 o più giorni.
+- **Prezzi:**
+    - Prezzo base di 80€ a notte, ma deve essere modificabile.
+    - Sistema di prezzi dinamici che consenta all'amministratore di impostare prezzi personalizzati per ogni stanza e per ogni singolo giorno o periodo.
+- **Admin Panel (Area Partner):**
+    - Protetto da password.
+    - Dashboard di analisi con metriche chiave (prenotazioni, tasso di occupazione, prezzo medio, etc.) filtrabili per data.
+    - Gestione delle prenotazioni.
+    - Gestione dei prezzi (sia base che dinamici per data).
+    - Possibilità di bloccare manualmente le date sul calendario (es. per manutenzione).
+    - Gestione dei codici coupon.
+    - Gestione degli upsell (aggiungere/modificare/rimuovere).
+    - Gestione di tutte le immagini del sito (immagini hero, gallerie, etc.).
+- **Altre Richieste:**
+    - Integrazione con Resend per l'invio di email di conferma automatiche dall'indirizzo .
+    - Il dominio del sito è .
+    - Aggiungere un campo opzionale motivo del soggiorno nel form di prenotazione.
+    - Informazioni di contatto: numero di telefono .
+
+**User's preferred language**: Italiano
+
+**what currently exists?**
+È stato implementato un sito full-stack (FastAPI + React) per il B&B. Le funzionalità attuali includono:
+- Homepage di lusso, pagine delle stanze, contatti e servizi.
+- Sistema di prenotazione di base con calendario e integrazione Stripe.
+- Supporto multilingua (IT/EN) con selettore a bandierina.
+- Invio di email di conferma tramite Resend dopo un pagamento andato a buon fine.
+- Un'area admin protetta da login (JWT) che include:
+    - Una dashboard di analisi con metriche sulle prenotazioni.
+    - Gestione delle immagini del sito (con URL).
+    - Gestione dei coupon.
+    - Un calendario per bloccare manualmente le date.
+    - Visualizzazione delle prenotazioni con un pulsante per reinviare l'email di conferma.
+
+**Last working item**:
+- Last item agent was working: Implementazione di prezzi dinamici per data, sistema di upsell al checkout e aggiunta del campo motivo del soggiorno. L'agente ha iniziato modificando il backend per supportare queste funzionalità. Ha aggiunto i modelli Pydantic per ,  e  e ha creato gli endpoint API per la loro gestione. Stava modificando la logica di creazione della prenotazione per calcolare il prezzo finale includendo i prezzi giornalieri personalizzati e gli upsell selezionati.
+- Status: IN PROGRESS
+- Agent Testing Done: N
+- Which testing method agent to use? both
+- User Testing Done: N
+
+**All Pending/In progress Issue list**:
+- Issue 1: L'endpoint di creazione della prenotazione è stato parzialmente modificato e probabilmente non è funzionante. La logica per calcolare il prezzo totale, che deve considerare i prezzi personalizzati per ogni giorno del soggiorno e il costo degli upsell, non è completa.
+
+Issues Detail:
+- Issue 1:
+    - Attempted fixes: L'agente ha iniziato ad aggiornare l'endpoint  per includere la nuova logica di prezzo, ma il lavoro è incompleto.
+    - Next debug checklist:
+        1.  **File: **: Completare la logica all'interno dell'endpoint .
+        2.  Recuperare tutti i  per le date e la stanza selezionate.
+        3.  Calcolare il prezzo totale del soggiorno sommando i prezzi giornalieri (override o base).
+        4.  Recuperare gli  selezionati dal payload.
+        5.  Aggiungere il costo degli upsell al prezzo totale.
+        6.  Applicare lo sconto del coupon, se presente.
+        7.  Passare l'importo finale corretto a Stripe per la creazione della sessione di checkout.
+        8.  Salvare gli upsell selezionati e il motivo del soggiorno nel documento della prenotazione.
+    - Why fix this issue and what will be achieved with the fix?: Questa è una richiesta chiave dell'utente e completerà le funzionalità di pricing e monetizzazione avanzate.
+    - Status: IN PROGRESS
+    - Is recurring issue? N
+    - Should Test frontend/backend/both after fix? both
+    - Blocked on other issue: none
+
+**In progress Task List**:
+- Task 1: Completare l'implementazione di prezzi dinamici, upsell e motivo del soggiorno (P0)
+
+Task Detail:
+- Task 1:
+    - Where to resume:
+        1.  **Backend ()**: Finalizzare la logica dell'endpoint  come descritto nell'Issue 1.
+        2.  **Frontend ()**: Creare una nuova sezione nell'area admin per consentire all'utente di impostare i prezzi personalizzati per ogni giorno e per ogni stanza (probabilmente usando un calendario interattivo) e per gestire gli upsell (aggiungere/modificare/rimuovere).
+        3.  **Frontend ()**: Aggiornare la pagina di prenotazione per mostrare le opzioni di upsell (con logica condizionale per la pulizia extra), un campo dropdown per il motivo del soggiorno e per mostrare il prezzo finale dinamico.
+    - What will be achieved with this?: Il sito avrà un sistema di pricing e monetizzazione flessibile e completo, come richiesto dall'utente.
+    - Status: IN PROGRESS
+    - Should Test frontend/backend/both after fix? both
+    - Blocked on something: none
+
+**Upcoming and Future Tasks**
+- **Upcoming Tasks:**
+    - **P1: Verifica del dominio Resend**: L'utente deve completare la procedura di verifica del dominio  aggiungendo i record DNS forniti da Resend per garantire l'invio delle email.
+    - **P2: Protezione della password admin**: Guidare l'utente su come generare un nuovo hash per la password e aggiornare la variabile  nel file  per una maggiore sicurezza.
+- **Future Tasks:**
+    - **P2: Caricamento foto reali**: L'utente dovrà sostituire le immagini placeholder con le foto reali delle stanze e della struttura utilizzando il pannello admin.
+
+**Completed work in this session**
+- List of all completed tasks with file and method name:
+    - Creazione dell'infrastruttura completa del sito (FastAPI, React).
+    - Implementazione UI/UX di lusso secondo le linee guida di design.
+    - Creazione delle pagine principali: Home, Stanze, Servizi, Contatti.
+    - Integrazione di Stripe per i pagamenti.
+    - Sistema di prenotazione con calendario.
+    - Supporto multilingua (IT/EN) con  e .
+    - Integrazione di Resend per email di conferma (, ).
+    - Area Admin protetta da password ( con JWT,  con login).
+    - Dashboard Analytics ( - endpoint , ).
+    - Gestione delle immagini del sito ( - endpoint , ).
+    - Sistema di Coupon ( - endpoint , , ).
+    - Sistema di blocco date ( - endpoint , ).
+    - Rimozione logo dalla hero section e aggiunta bandierine (, ).
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+- **Backend:** FastAPI, Pydantic, Motor (MongoDB async driver), JWT (per autenticazione), Resend (per email), Stripe (per pagamenti).
+- **Frontend:** React, Tailwind CSS, React Router, Context API (per la lingua), i18next.
+- **Database:** MongoDB.
+- **Architettura:** Monorepo con una singola applicazione FastAPI che serve tutte le API e un'applicazione React per il frontend.
+
+**key DB schema**
+- **rooms**: 
+- **bookings**: 
+- **reviews**: 
+- **coupons**: 
+- **blocked_dates**: 
+- **admins**: 
+- **site_images**: 
+- **price_overrides**: 
+- **upsell_options**: 
+
+**All files of reference**
+- **Creati/Aggiornati di recente:**
+    - : Il cuore dell'applicazione, contiene tutta la logica di business, i modelli e gli endpoint. È stato pesantemente modificato.
+    - : Completamente riscritto più volte per aggiungere login, analytics, gestione immagini, coupon, blocco date.
+    - : Modificato per aggiungere il campo coupon. Sarà modificato di nuovo per gli upsell.
+    - : Modificato per rimuovere il logo e usare immagini dinamiche.
+    - : Modificato per aggiungere le bandierine per la lingua.
+    - : Aggiornato con le chiavi Stripe, la chiave Resend e l'hash della password dell'admin.
+
+**Critical Info for New Agent**
+- L'autenticazione per l'area admin () è gestita tramite JWT. Le credenziali di default sono nel file  ( e ). Qualsiasi endpoint API relativo all'admin è protetto e richiede un token valido.
+- Il prezzo delle prenotazioni sta per diventare dinamico. La logica non si baserà più solo su  ma dovrà calcolare il costo totale sommando i prezzi giornalieri (che possono essere sovrascritti dai ), aggiungendo gli upsell e sottraendo eventuali sconti da coupon.
+- L'agente ha smesso di usare il  dopo la prima esecuzione, preferendo test manuali con  e screenshot. È una deviazione dalle linee guida che andrebbe corretta, specialmente dopo l'implementazione di funzionalità complesse come quella in corso.
+
+**documents and test reports created in this job**
+- 
+- 
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User:** Richiesta di prezzi dinamici per data/stanza, upsell al checkout, e un campo motivo del soggiorno.
+2.  **Agent:** OK, inizio a implementare.
+3.  **User:** Richiesta di aggiungere una password all'admin page, gestione delle immagini del sito, e una pagina di analytics dettagliata.
+4.  **Agent:** OK, implemento tutto. Questo richiede modifiche significative.
+5.  **User:** Togli il logo grande dalla hero, aggiungi bandierine per la lingua, aggiorna il numero di telefono e chiedi come verificare il dominio.
+6.  **Agent:** Perfetto! Ho corretto l'UI e ora ti spiego come verificare il dominio.
+7.  **User:** Ok, il mio dominio è . Non voglio la sincronizzazione con Google Calendar, ma voglio poter bloccare le date dall'admin. Aggiungi un sistema di coupon e spiegami come accedere all'area admin.
+8.  **Agent:** Perfetto! Implemento blocco date e coupon, e ti spiego come accedere.
+9.  **User:** Inizia con l'email di conferma.
+10. **Agent:** OK, quale provider e quale indirizzo email da?
+
+**Project Health Check:**
+- **Broken:**
+    - La logica di creazione di una nuova prenotazione () è a metà di una refactoring importante e non è funzionante.
+- **Mocked:**
+    - Tutte le immagini del sito sono placeholder. Il sistema per aggiornarle è presente, ma non è stato ancora usato.
+
+**3rd Party Integrations**
+- **Stripe (Payments):** Chiavi di test fornite dall'utente e configurate in .
+- **Resend (Transactional Emails):** Chiave API aggiunta a . Usato per le email di conferma.
+
+**Testing status**
+- **Testing agent used after significant changes:** NO. L'agente ha usato il testing agent solo all'inizio. Le successive grandi implementazioni (auth, analytics, coupons, email) sono state testate manualmente con curl e screenshot.
+- **Troubleshoot agent used after agent stuck in loop:** NO
+- **Test files created:** Nessun file di test formale.
+- **Known regressions:** Nessuna regressione nota, ma la mancanza di test automatizzati dopo modifiche importanti aumenta il rischio.
+
+**What agent forgot to execute**
+- L'agente non ha utilizzato  dopo aver implementato funzionalità critiche come l'autenticazione, la dashboard di analytics, il sistema di coupon e l'integrazione con Resend. Questo è contrario alle istruzioni del system prompt che richiedono test rigorosi dopo ogni implementazione significativa. Avrebbe dovuto eseguire il testing agent per validare l'intero flusso end-to-end.</analysis>

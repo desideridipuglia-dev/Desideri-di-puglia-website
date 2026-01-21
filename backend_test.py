@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any
 
 class DesideriPugliaAPITester:
-    def __init__(self, base_url="https://borgo-vecchio-bnb.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://pugliastay.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
@@ -159,7 +159,7 @@ class DesideriPugliaAPITester:
                 "check_out": check_out,
                 "num_guests": 2,
                 "notes": "Test booking",
-                "origin_url": "https://borgo-vecchio-bnb.preview.emergentagent.com"
+                "origin_url": "https://pugliastay.preview.emergentagent.com"
             }
             
             response = requests.post(
