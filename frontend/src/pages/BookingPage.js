@@ -136,16 +136,27 @@ const BookingPage = () => {
   
   const subtotal = roomPrice + upsellsTotal;
   
-  // Calculate discount
+  // Calculate discount (only on room price, not upsells)
   let discountAmount = 0;
   if (couponDiscount && couponStatus === 'valid') {
     if (couponDiscount.discount_type === 'percentage') {
-      discountAmount = subtotal * (couponDiscount.discount_value / 100);
+      discountAmount = roomPrice * (couponDiscount.discount_value / 100);
     } else {
-      discountAmount = Math.min(couponDiscount.discount_value, subtotal);
+      discountAmount = Math.min(couponDiscount.discount_value, roomPrice);
     }
   }
   const totalPrice = subtotal - discountAmount;
+  
+  // Filter upsells based on min_nights
+  const availableUpsells = upsells.filter(upsell => upsell.min_nights <= nights);
+  
+  const toggleUpsell = (upsellId) => {
+    setSelectedUpsells(prev => 
+      prev.includes(upsellId) 
+        ? prev.filter(id => id !== upsellId)
+        : [...prev, upsellId]
+    );
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
