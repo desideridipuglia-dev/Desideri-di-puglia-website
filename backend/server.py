@@ -8,12 +8,13 @@ import logging
 import asyncio
 import hashlib
 import secrets
+import json
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict
 import uuid
 from datetime import datetime, timezone, date, timedelta
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+import stripe
 import resend
 
 
@@ -21,13 +22,21 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.environ.get('MONGO_URL')
+# Fallback se la variabile d'ambiente non è settata (per sicurezza locale)
+if not mongo_url:
+    mongo_url = os.environ.get('MONGO_URI', 'mongodb://localhost:27017')
+
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[os.environ.get('DB_NAME', 'desideri_db')]
 
 # Resend configuration
 resend.api_key = os.environ.get('RESEND_API_KEY')
 SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'prenotazioni@desideridipuglia.com')
+
+# Stripe configuration
+stripe.api_key = os.environ.get('STRIPE_API_KEY')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
 
 # Admin credentials
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
@@ -133,7 +142,7 @@ class Booking(BaseModel):
     payment_status: str = "pending"  # pending, paid, refunded
     stripe_session_id: Optional[str] = None
     notes: Optional[str] = None
-    stay_reason: Optional[str] = None  # Motivo del soggiorno
+    stay_reason: Optional[str] = None # Motivo del soggiorno
     coupon_code: Optional[str] = None
     discount_amount: float = 0.0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -333,7 +342,6 @@ def generate_booking_confirmation_email(booking: dict, room: dict, language: str
             <tr>
                 <td align="center">
                     <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #E5E0D8;">
-                        <!-- Header -->
                         <tr>
                             <td style="background-color: #0A2342; padding: 40px; text-align: center;">
                                 <h1 style="color: #C5A059; margin: 0; font-size: 28px; font-weight: normal; letter-spacing: 2px;">
@@ -345,7 +353,6 @@ def generate_booking_confirmation_email(booking: dict, room: dict, language: str
                             </td>
                         </tr>
                         
-                        <!-- Content -->
                         <tr>
                             <td style="padding: 40px;">
                                 <p style="color: #0A2342; font-size: 18px; margin: 0 0 20px 0;">
@@ -355,7 +362,6 @@ def generate_booking_confirmation_email(booking: dict, room: dict, language: str
                                     {intro}
                                 </p>
                                 
-                                <!-- Booking Details Box -->
                                 <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F9F8F4; border: 1px solid #E5E0D8; margin-bottom: 30px;">
                                     <tr>
                                         <td style="padding: 20px; border-bottom: 1px solid #E5E0D8;">
@@ -392,7 +398,6 @@ def generate_booking_confirmation_email(booking: dict, room: dict, language: str
                                     </tr>
                                 </table>
                                 
-                                <!-- Check-in/out Info -->
                                 <table width="100%" cellpadding="15" cellspacing="0" style="background-color: #0A2342; margin-bottom: 30px;">
                                     <tr>
                                         <td style="color: #ffffff; text-align: center;">
@@ -402,7 +407,6 @@ def generate_booking_confirmation_email(booking: dict, room: dict, language: str
                                     </tr>
                                 </table>
                                 
-                                <!-- Address -->
                                 <h3 style="color: #0A2342; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 15px 0;">
                                     {address_title}
                                 </h3>
@@ -411,7 +415,6 @@ def generate_booking_confirmation_email(booking: dict, room: dict, language: str
                                     76121 Barletta (BT), Italia
                                 </p>
                                 
-                                <!-- Note -->
                                 <p style="color: #C5A059; font-size: 14px; font-style: italic; margin: 0 0 30px 0; padding: 15px; border-left: 3px solid #C5A059; background-color: #F9F8F4;">
                                     {note_text}
                                 </p>
@@ -422,7 +425,6 @@ def generate_booking_confirmation_email(booking: dict, room: dict, language: str
                             </td>
                         </tr>
                         
-                        <!-- Footer -->
                         <tr>
                             <td style="background-color: #0A2342; padding: 30px; text-align: center;">
                                 <p style="color: #C5A059; margin: 0 0 10px 0; font-size: 14px;">
@@ -1044,33 +1046,39 @@ async def create_booking(booking_data: BookingCreate, request: Request):
     )
     
     # Create Stripe checkout session
-    stripe_api_key = os.environ.get("STRIPE_API_KEY")
     host_url = booking_data.origin_url.rstrip('/')
-    webhook_url = f"{str(request.base_url).rstrip('/')}/api/webhook/stripe"
     
-    stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url=webhook_url)
-    
-    success_url = f"{host_url}/booking/success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{host_url}/booking/cancel"
-    
-    checkout_request = CheckoutSessionRequest(
-        amount=total_price,
-        currency="eur",
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata={
-            "booking_id": booking.id,
-            "room_id": booking_data.room_id,
-            "guest_email": booking_data.guest_email,
-            "check_in": booking_data.check_in,
-            "check_out": booking_data.check_out
-        }
-    )
-    
-    session = await stripe_checkout.create_checkout_session(checkout_request)
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'eur',
+                    'product_data': {
+                        'name': f"Prenotazione: {room['name_it']}",
+                        'description': f"{nights} notti - dal {booking_data.check_in} al {booking_data.check_out}",
+                    },
+                    'unit_amount': int(total_price * 100),  # Stripe expects cents
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=f"{host_url}/booking/success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{host_url}/booking/cancel",
+            metadata={
+                "booking_id": booking.id,
+                "room_id": booking_data.room_id,
+                "guest_email": booking_data.guest_email,
+                "check_in": booking_data.check_in,
+                "check_out": booking_data.check_out
+            }
+        )
+    except Exception as e:
+        logger.error(f"Stripe session creation failed: {e}")
+        raise HTTPException(status_code=500, detail="Could not create payment session")
     
     # Update booking with session ID
-    booking.stripe_session_id = session.session_id
+    booking.stripe_session_id = session.id
     booking_dict = booking.model_dump()
     booking_dict["created_at"] = booking_dict["created_at"].isoformat()
     booking_dict["updated_at"] = booking_dict["updated_at"].isoformat()
@@ -1080,7 +1088,7 @@ async def create_booking(booking_data: BookingCreate, request: Request):
     # Create payment transaction record
     payment_transaction = PaymentTransaction(
         booking_id=booking.id,
-        session_id=session.session_id,
+        session_id=session.id,
         amount=total_price,
         currency="eur",
         status="initiated",
@@ -1098,7 +1106,7 @@ async def create_booking(booking_data: BookingCreate, request: Request):
     return {
         "booking_id": booking.id,
         "checkout_url": session.url,
-        "session_id": session.session_id,
+        "session_id": session.id,
         "total_price": total_price,
         "nights": nights
     }
@@ -1106,19 +1114,16 @@ async def create_booking(booking_data: BookingCreate, request: Request):
 @api_router.get("/bookings/status/{session_id}")
 async def check_booking_status(session_id: str, request: Request):
     """Check payment status and update booking"""
-    stripe_api_key = os.environ.get("STRIPE_API_KEY")
-    webhook_url = f"{str(request.base_url).rstrip('/')}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url=webhook_url)
     
     try:
-        status = await stripe_checkout.get_checkout_status(session_id)
+        session = stripe.checkout.Session.retrieve(session_id)
         
         # Get booking before update to check if email was already sent
         booking = await db.bookings.find_one({"stripe_session_id": session_id}, {"_id": 0})
         previous_status = booking.get("payment_status") if booking else None
         
         # Update booking status
-        if status.payment_status == "paid":
+        if session.payment_status == "paid":
             await db.bookings.update_one(
                 {"stripe_session_id": session_id},
                 {"$set": {
@@ -1130,7 +1135,7 @@ async def check_booking_status(session_id: str, request: Request):
             await db.payment_transactions.update_one(
                 {"session_id": session_id},
                 {"$set": {
-                    "status": "paid",
+                    "status": session.status,
                     "payment_status": "paid",
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }}
@@ -1142,7 +1147,7 @@ async def check_booking_status(session_id: str, request: Request):
                 if room:
                     await send_booking_confirmation_email(booking, room, "it")
                     
-        elif status.status == "expired":
+        elif session.status == "expired":
             await db.bookings.update_one(
                 {"stripe_session_id": session_id},
                 {"$set": {
@@ -1163,8 +1168,8 @@ async def check_booking_status(session_id: str, request: Request):
         booking = await db.bookings.find_one({"stripe_session_id": session_id}, {"_id": 0})
         
         return {
-            "payment_status": status.payment_status,
-            "status": status.status,
+            "payment_status": session.payment_status,
+            "status": session.status,
             "booking": booking
         }
     except Exception as e:
@@ -1217,26 +1222,32 @@ async def resend_booking_confirmation(booking_id: str):
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
     """Handle Stripe webhook events"""
-    stripe_api_key = os.environ.get("STRIPE_API_KEY")
-    webhook_url = f"{str(request.base_url).rstrip('/')}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url=webhook_url)
-    
-    body = await request.body()
-    signature = request.headers.get("Stripe-Signature")
+    payload = await request.body()
+    sig_header = request.headers.get("Stripe-Signature")
     
     try:
-        webhook_response = await stripe_checkout.handle_webhook(body, signature)
-        
-        if webhook_response.payment_status == "paid":
+        # If secret is set, verify signature
+        if STRIPE_WEBHOOK_SECRET:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, STRIPE_WEBHOOK_SECRET
+            )
+        else:
+            # Fallback for dev mode without secret
+            event = json.loads(payload)
+            
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            session_id = session['id']
+            
             # Get booking before update
             booking = await db.bookings.find_one(
-                {"stripe_session_id": webhook_response.session_id}, 
+                {"stripe_session_id": session_id}, 
                 {"_id": 0}
             )
             previous_status = booking.get("payment_status") if booking else None
             
             await db.bookings.update_one(
-                {"stripe_session_id": webhook_response.session_id},
+                {"stripe_session_id": session_id},
                 {"$set": {
                     "status": "confirmed",
                     "payment_status": "paid",
@@ -1244,7 +1255,7 @@ async def stripe_webhook(request: Request):
                 }}
             )
             await db.payment_transactions.update_one(
-                {"session_id": webhook_response.session_id},
+                {"session_id": session_id},
                 {"$set": {
                     "status": "paid",
                     "payment_status": "paid",
