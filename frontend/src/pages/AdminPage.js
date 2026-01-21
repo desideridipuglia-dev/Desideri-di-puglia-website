@@ -370,9 +370,78 @@ const AdminPage = () => {
     } catch { toast.error('Errore'); }
   };
 
+  // Upsell handlers
+  const handleCreateUpsell = async () => {
+    if (!newUpsell.slug || !newUpsell.title_it || !newUpsell.price) {
+      toast.error('Compila slug, titolo e prezzo');
+      return;
+    }
+    try {
+      await axios.post(`${API}/upsells`, {
+        ...newUpsell,
+        price: parseFloat(newUpsell.price),
+        min_nights: parseInt(newUpsell.min_nights) || 0
+      });
+      toast.success('Upsell creato');
+      setNewUpsell({ slug: '', title_it: '', title_en: '', description_it: '', description_en: '', price: '', min_nights: 0, icon: 'gift' });
+      fetchData();
+    } catch (e) { toast.error(e.response?.data?.detail || 'Errore'); }
+  };
+
+  const handleToggleUpsell = async (upsellId, isActive) => {
+    try {
+      await axios.put(`${API}/upsells/${upsellId}`, { is_active: !isActive });
+      toast.success(isActive ? 'Disattivato' : 'Attivato');
+      fetchData();
+    } catch { toast.error('Errore'); }
+  };
+
+  const handleDeleteUpsell = async (upsellId) => {
+    if (!window.confirm('Eliminare questo upsell?')) return;
+    try {
+      await axios.delete(`${API}/upsells/${upsellId}`);
+      toast.success('Eliminato');
+      fetchData();
+    } catch { toast.error('Errore'); }
+  };
+
+  // Custom pricing handlers
+  const handleSetCustomPrices = async () => {
+    if (!priceRange.from || !priceRange.to || !customPrice) {
+      toast.error('Seleziona date e prezzo');
+      return;
+    }
+    try {
+      const startDate = format(priceRange.from, 'yyyy-MM-dd');
+      const endDate = format(priceRange.to, 'yyyy-MM-dd');
+      await axios.post(`${API}/custom-prices`, {
+        room_id: selectedRoom,
+        start_date: startDate,
+        end_date: endDate,
+        price: parseFloat(customPrice),
+        reason: priceReason || null
+      });
+      toast.success('Prezzi personalizzati impostati');
+      setPriceRange({ from: undefined, to: undefined });
+      setCustomPrice('');
+      setPriceReason('');
+      fetchData();
+    } catch { toast.error('Errore'); }
+  };
+
+  const handleDeleteCustomPrice = async (roomId, date) => {
+    try {
+      await axios.delete(`${API}/custom-prices/${roomId}/${date}`);
+      toast.success('Prezzo rimosso');
+      fetchData();
+    } catch { toast.error('Errore'); }
+  };
+
   const tabs = [
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'rooms', label: 'Stanze', icon: Bed },
+    { id: 'pricing', label: 'Prezzi', icon: DollarSign },
+    { id: 'upsells', label: 'Upsells', icon: Gift },
     { id: 'images', label: 'Immagini', icon: Image },
     { id: 'dates', label: 'Blocca Date', icon: Lock },
     { id: 'bookings', label: 'Prenotazioni', icon: CalendarIcon },
