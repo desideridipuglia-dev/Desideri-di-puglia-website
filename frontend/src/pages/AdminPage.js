@@ -108,6 +108,20 @@ const AdminPage = () => {
   const [topStats, setTopStats] = useState(null);
   const [loading, setLoading] = useState(true);
   
+  // Upsells state
+  const [upsells, setUpsells] = useState([]);
+  const [newUpsell, setNewUpsell] = useState({
+    slug: '', title_it: '', title_en: '', description_it: '', description_en: '',
+    price: '', min_nights: 0, icon: 'gift'
+  });
+  const [editingUpsell, setEditingUpsell] = useState(null);
+  
+  // Custom prices state
+  const [customPrices, setCustomPrices] = useState({});
+  const [priceRange, setPriceRange] = useState({ from: undefined, to: undefined });
+  const [customPrice, setCustomPrice] = useState('');
+  const [priceReason, setPriceReason] = useState('');
+  
   // Analytics filters
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [dateFilter, setDateFilter] = useState('year');
