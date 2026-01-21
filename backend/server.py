@@ -150,6 +150,8 @@ class BookingCreate(BaseModel):
     notes: Optional[str] = None
     origin_url: str
     coupon_code: Optional[str] = None
+    upsell_ids: Optional[List[str]] = None
+    stay_reason: Optional[str] = None
 
 class Review(BaseModel):
     model_config = ConfigDict(extra="ignore")
