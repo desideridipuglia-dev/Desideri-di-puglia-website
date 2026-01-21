@@ -530,6 +530,99 @@ async def init_settings():
         await db.settings.insert_one(default_settings)
         logger.info("Default settings initialized")
 
+async def init_upsells():
+    """Initialize default upsells if they don't exist"""
+    upsells_count = await db.upsells.count_documents({})
+    if upsells_count == 0:
+        default_upsells = [
+            {
+                "id": str(uuid.uuid4()),
+                "slug": "prosecco",
+                "title_it": "Bollicine di Benvenuto",
+                "title_en": "Welcome Bubbles",
+                "description_it": "Trasforma il tuo arrivo in un momento speciale. Una bottiglia di Prosecco DOC ti aspetta fresca, pronta per brindare all'inizio della tua vacanza pugliese.",
+                "description_en": "Transform your arrival into a special moment. A chilled bottle of Prosecco DOC awaits you, ready to toast the beginning of your Apulian holiday.",
+                "price": 25.0,
+                "min_nights": 0,
+                "is_active": True,
+                "order": 1,
+                "icon": "wine",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "slug": "vino-locale",
+                "title_it": "Sapori di Puglia",
+                "title_en": "Taste of Puglia",
+                "description_it": "Lasciati conquistare dai vini del territorio. Una selezione di rosso Primitivo o bianco Verdeca, perfetti per accompagnare le serate nella tua dimora.",
+                "description_en": "Let yourself be conquered by local wines. A selection of red Primitivo or white Verdeca, perfect for evenings in your retreat.",
+                "price": 20.0,
+                "min_nights": 0,
+                "is_active": True,
+                "order": 2,
+                "icon": "grape",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "slug": "sup-mare",
+                "title_it": "Avventura sull'Adriatico",
+                "title_en": "Adriatic Adventure",
+                "description_it": "Esplora la costa come un locale. Il SUP è il modo perfetto per scoprire calette nascoste e goderti il mare cristallino della Puglia.",
+                "description_en": "Explore the coast like a local. SUP is the perfect way to discover hidden coves and enjoy the crystal-clear Apulian sea.",
+                "price": 35.0,
+                "min_nights": 0,
+                "is_active": True,
+                "order": 3,
+                "icon": "anchor",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "slug": "spesa-arrivo",
+                "title_it": "Dispensa del Viaggiatore",
+                "title_en": "Traveler's Pantry",
+                "description_it": "Arriva e trova tutto pronto. Prepariamo la tua lista della spesa con prodotti freschi locali, così potrai rilassarti dal primo momento.",
+                "description_en": "Arrive and find everything ready. We prepare your shopping list with fresh local products, so you can relax from the first moment.",
+                "price": 40.0,
+                "min_nights": 0,
+                "is_active": True,
+                "order": 4,
+                "icon": "shopping-basket",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "slug": "pulizia-extra",
+                "title_it": "Refresh a Metà Soggiorno",
+                "title_en": "Mid-Stay Refresh",
+                "description_it": "Concediti il lusso di un ambiente sempre impeccabile. Un servizio di pulizia extra per rendere il tuo lungo soggiorno ancora più confortevole.",
+                "description_en": "Treat yourself to the luxury of an always impeccable environment. An extra cleaning service to make your long stay even more comfortable.",
+                "price": 50.0,
+                "min_nights": 7,
+                "is_active": True,
+                "order": 5,
+                "icon": "sparkles",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "slug": "colazione-premium",
+                "title_it": "Risveglio Gourmet",
+                "title_en": "Gourmet Awakening",
+                "description_it": "Inizia la giornata con i sapori autentici della Puglia. Prodotti artigianali, freschi e genuini direttamente nella tua cucina.",
+                "description_en": "Start your day with authentic Apulian flavors. Artisanal, fresh and genuine products delivered directly to your kitchen.",
+                "price": 15.0,
+                "min_nights": 0,
+                "is_active": True,
+                "order": 6,
+                "icon": "coffee",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+        ]
+        await db.upsells.insert_many(default_upsells)
+        logger.info("Default upsells initialized")
+
 
 # ==================== ROOM ENDPOINTS ====================
 
