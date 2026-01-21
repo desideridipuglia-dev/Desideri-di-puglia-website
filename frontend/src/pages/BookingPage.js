@@ -444,8 +444,90 @@ const BookingPage = () => {
                         </p>
                       )}
                     </div>
+                    
+                    {/* Stay Reason */}
+                    <div className="md:col-span-2">
+                      <Label htmlFor="stay_reason">
+                        {language === 'it' ? 'Motivo del soggiorno (opzionale)' : 'Reason for stay (optional)'}
+                      </Label>
+                      <Select
+                        value={formData.stay_reason}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, stay_reason: value }))}
+                      >
+                        <SelectTrigger className="mt-2 rounded-none border-puglia-stone" data-testid="stay-reason-select">
+                          <SelectValue placeholder={language === 'it' ? 'Seleziona un motivo...' : 'Select a reason...'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {stayReasons.map(reason => (
+                            <SelectItem key={reason.id} value={reason.id}>
+                              {language === 'it' ? reason.it : reason.en}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </motion.div>
+                
+                {/* Upsells Section */}
+                {nights > 0 && availableUpsells.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="bg-white p-8 border border-puglia-stone/50"
+                  >
+                    <h2 className="font-heading text-2xl text-adriatic-blue mb-2">
+                      {language === 'it' ? 'Rendi speciale il tuo soggiorno' : 'Make your stay special'}
+                    </h2>
+                    <p className="text-muted-foreground text-sm mb-6">
+                      {language === 'it' 
+                        ? 'Aggiungi esperienze esclusive al tuo soggiorno' 
+                        : 'Add exclusive experiences to your stay'}
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {availableUpsells.map((upsell) => {
+                        const IconComponent = UPSELL_ICONS[upsell.icon] || Gift;
+                        const isSelected = selectedUpsells.includes(upsell.id);
+                        
+                        return (
+                          <button
+                            key={upsell.id}
+                            type="button"
+                            onClick={() => toggleUpsell(upsell.id)}
+                            className={`p-5 border text-left transition-all relative ${
+                              isSelected 
+                                ? 'border-antique-gold bg-antique-gold/5 ring-1 ring-antique-gold' 
+                                : 'border-puglia-stone/50 hover:border-adriatic-blue'
+                            }`}
+                            data-testid={`upsell-${upsell.slug}`}
+                          >
+                            {isSelected && (
+                              <div className="absolute top-3 right-3 w-6 h-6 bg-antique-gold rounded-full flex items-center justify-center">
+                                <Check className="w-4 h-4 text-white" />
+                              </div>
+                            )}
+                            <div className="flex items-start gap-4">
+                              <div className="w-10 h-10 bg-puglia-sand flex items-center justify-center flex-shrink-0">
+                                <IconComponent className="w-5 h-5 text-antique-gold" />
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-heading text-base text-adriatic-blue pr-8">
+                                  {language === 'it' ? upsell.title_it : upsell.title_en}
+                                </h3>
+                                <p className="text-muted-foreground text-sm mt-1 line-clamp-2">
+                                  {language === 'it' ? upsell.description_it : upsell.description_en}
+                                </p>
+                                <p className="text-antique-gold font-medium mt-2">+€{upsell.price}</p>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
               </form>
             </div>
 
