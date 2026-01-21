@@ -1039,7 +1039,8 @@ async def create_booking(booking_data: BookingCreate, request: Request):
         total_price=total_price,
         notes=booking_data.notes,
         coupon_code=coupon_code,
-        discount_amount=discount_amount
+        discount_amount=discount_amount,
+        stay_reason=booking_data.stay_reason
     )
     
     # Create Stripe checkout session
