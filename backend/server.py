@@ -951,15 +951,41 @@ async def create_booking(booking_data: BookingCreate, request: Request):
         raise HTTPException(status_code=400, detail="Check-out must be after check-in")
     
     nights = (check_out - check_in).days
-    subtotal = float(room["price_per_night"]) * nights
+    
+    # Calculate room price with custom prices
+    room_price = 0.0
+    current = check_in
+    default_price = float(room["price_per_night"])
+    
+    while current < check_out:
+        date_str = current.strftime("%Y-%m-%d")
+        custom = await db.custom_prices.find_one({"room_id": booking_data.room_id, "date": date_str})
+        if custom:
+            room_price += float(custom["price"])
+        else:
+            room_price += default_price
+        current += timedelta(days=1)
+    
+    # Calculate upsells total
+    upsells_total = 0.0
+    upsell_ids = []
+    if booking_data.upsell_ids:
+        for upsell_id in booking_data.upsell_ids:
+            upsell = await db.upsells.find_one({"id": upsell_id, "is_active": True}, {"_id": 0})
+            if upsell:
+                # Check min_nights requirement
+                if upsell.get("min_nights", 0) <= nights:
+                    upsells_total += float(upsell["price"])
+                    upsell_ids.append(upsell_id)
+    
+    subtotal = room_price + upsells_total
     discount_amount = 0.0
     coupon_code = None
     
-    # Apply coupon if provided
+    # Apply coupon if provided (only on room price, not upsells)
     if booking_data.coupon_code:
         coupon = await db.coupons.find_one({"code": booking_data.coupon_code.upper(), "is_active": True}, {"_id": 0})
         if coupon:
-            # Validate coupon
             today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
             is_valid = True
             
@@ -975,11 +1001,10 @@ async def create_booking(booking_data: BookingCreate, request: Request):
             if is_valid:
                 coupon_code = coupon["code"]
                 if coupon["discount_type"] == "percentage":
-                    discount_amount = subtotal * (coupon["discount_value"] / 100)
-                else:  # fixed
-                    discount_amount = min(coupon["discount_value"], subtotal)
+                    discount_amount = room_price * (coupon["discount_value"] / 100)
+                else:
+                    discount_amount = min(coupon["discount_value"], room_price)
                 
-                # Increment coupon usage
                 await db.coupons.update_one(
                     {"code": coupon["code"]},
                     {"$inc": {"uses_count": 1}}
@@ -1008,6 +1033,9 @@ async def create_booking(booking_data: BookingCreate, request: Request):
         check_in=booking_data.check_in,
         check_out=booking_data.check_out,
         num_guests=booking_data.num_guests,
+        room_price=room_price,
+        upsells_total=upsells_total,
+        upsells=upsell_ids,
         total_price=total_price,
         notes=booking_data.notes,
         coupon_code=coupon_code,
