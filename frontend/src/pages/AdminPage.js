@@ -973,6 +973,143 @@ const AdminPage = () => {
                 </motion.div>
               )}
 
+              {/* Upsells Tab */}
+              {activeTab === 'upsells' && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h1 className="font-heading text-3xl text-adriatic-blue mb-8">Gestione Upsells</h1>
+                  <div className="bg-white p-6 border border-puglia-stone/50 mb-8">
+                    <h2 className="font-heading text-xl text-adriatic-blue mb-4">Crea nuovo upsell</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div><Label>Slug (ID) *</Label><Input value={newUpsell.slug} onChange={(e) => setNewUpsell({...newUpsell, slug: e.target.value.toLowerCase().replace(/\s/g, '-')})} placeholder="prosecco-benvenuto" className="mt-1 rounded-none" /></div>
+                      <div><Label>Icona</Label>
+                        <Select value={newUpsell.icon} onValueChange={(v) => setNewUpsell({...newUpsell, icon: v})}>
+                          <SelectTrigger className="mt-1 rounded-none"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="wine">🍷 Vino</SelectItem>
+                            <SelectItem value="grape">🍇 Uva</SelectItem>
+                            <SelectItem value="coffee">☕ Colazione</SelectItem>
+                            <SelectItem value="sparkles">✨ Pulizia</SelectItem>
+                            <SelectItem value="anchor">⚓ Mare</SelectItem>
+                            <SelectItem value="shopping-basket">🛒 Spesa</SelectItem>
+                            <SelectItem value="gift">🎁 Regalo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div><Label>Titolo IT *</Label><Input value={newUpsell.title_it} onChange={(e) => setNewUpsell({...newUpsell, title_it: e.target.value})} placeholder="Bollicine di Benvenuto" className="mt-1 rounded-none" /></div>
+                      <div><Label>Titolo EN</Label><Input value={newUpsell.title_en} onChange={(e) => setNewUpsell({...newUpsell, title_en: e.target.value})} placeholder="Welcome Bubbles" className="mt-1 rounded-none" /></div>
+                      <div className="md:col-span-2"><Label>Descrizione IT *</Label><Textarea value={newUpsell.description_it} onChange={(e) => setNewUpsell({...newUpsell, description_it: e.target.value})} placeholder="Descrizione persuasiva..." className="mt-1 rounded-none" rows={2} /></div>
+                      <div className="md:col-span-2"><Label>Descrizione EN</Label><Textarea value={newUpsell.description_en} onChange={(e) => setNewUpsell({...newUpsell, description_en: e.target.value})} placeholder="Persuasive description..." className="mt-1 rounded-none" rows={2} /></div>
+                      <div><Label>Prezzo (€) *</Label><Input type="number" step="0.01" value={newUpsell.price} onChange={(e) => setNewUpsell({...newUpsell, price: e.target.value})} className="mt-1 rounded-none" /></div>
+                      <div><Label>Notti minime (0 = sempre visibile)</Label><Input type="number" value={newUpsell.min_nights} onChange={(e) => setNewUpsell({...newUpsell, min_nights: e.target.value})} className="mt-1 rounded-none" /></div>
+                    </div>
+                    <Button onClick={handleCreateUpsell} className="mt-4 bg-antique-gold text-adriatic-blue hover:bg-adriatic-blue hover:text-white" data-testid="create-upsell-btn"><Plus className="w-4 h-4 mr-2" />Crea Upsell</Button>
+                  </div>
+                  <div className="bg-white border border-puglia-stone/50">
+                    <h2 className="font-heading text-xl text-adriatic-blue p-6 border-b border-puglia-stone/50">Upsells configurati</h2>
+                    {upsells.length === 0 ? <p className="text-muted-foreground p-6">Nessun upsell</p> : (
+                      <div className="divide-y divide-puglia-stone/30">
+                        {upsells.map((upsell) => (
+                          <div key={upsell.id} className="p-6 flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3">
+                                <span className="font-heading text-lg text-adriatic-blue">{upsell.title_it}</span>
+                                <span className={`text-xs px-2 py-1 ${upsell.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                                  {upsell.is_active ? 'Attivo' : 'Disattivato'}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{upsell.description_it}</p>
+                              <div className="flex items-center gap-4 mt-2 text-sm">
+                                <span className="text-antique-gold font-medium">€{upsell.price}</span>
+                                {upsell.min_nights > 0 && <span className="text-muted-foreground">Min {upsell.min_nights} notti</span>}
+                                <span className="text-muted-foreground font-mono text-xs">{upsell.slug}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button size="sm" variant="outline" onClick={() => handleToggleUpsell(upsell.id, upsell.is_active)}>
+                                {upsell.is_active ? 'Disattiva' : 'Attiva'}
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={() => handleDeleteUpsell(upsell.id)} className="text-red-600">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Pricing Tab */}
+              {activeTab === 'pricing' && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h1 className="font-heading text-3xl text-adriatic-blue mb-8">Prezzi Dinamici</h1>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="bg-white p-6 border border-puglia-stone/50">
+                      <h2 className="font-heading text-xl text-adriatic-blue mb-4">Imposta prezzo personalizzato</h2>
+                      <div className="mb-4">
+                        <Label>Stanza</Label>
+                        <Select value={selectedRoom} onValueChange={setSelectedRoom}>
+                          <SelectTrigger className="mt-2 rounded-none"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="nonna">Stanza della Nonna</SelectItem>
+                            <SelectItem value="pozzo">Stanza del Pozzo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="mb-4">
+                        <Label>Seleziona date</Label>
+                        <div className="mt-2 flex justify-center">
+                          <Calendar mode="range" selected={priceRange} onSelect={setPriceRange} locale={it} numberOfMonths={1} className="border border-puglia-stone" />
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <Label>Prezzo per notte (€)</Label>
+                        <Input type="number" step="0.01" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} placeholder="es. 100" className="mt-2 rounded-none" />
+                      </div>
+                      <div className="mb-4">
+                        <Label>Motivo (opzionale)</Label>
+                        <Input value={priceReason} onChange={(e) => setPriceReason(e.target.value)} placeholder="es. Alta stagione, Evento speciale" className="mt-2 rounded-none" />
+                      </div>
+                      <Button onClick={handleSetCustomPrices} className="w-full bg-antique-gold text-adriatic-blue hover:bg-adriatic-blue hover:text-white" data-testid="set-custom-price-btn">
+                        <DollarSign className="w-4 h-4 mr-2" />Imposta Prezzi
+                      </Button>
+                    </div>
+                    <div className="bg-white p-6 border border-puglia-stone/50">
+                      <h2 className="font-heading text-xl text-adriatic-blue mb-4">Prezzi personalizzati attivi</h2>
+                      {['nonna', 'pozzo'].map((roomId) => {
+                        const room = rooms.find(r => r.id === roomId);
+                        const prices = customPrices[roomId] || [];
+                        return (
+                          <div key={roomId} className="mb-6">
+                            <h3 className="font-medium text-adriatic-blue mb-2 flex items-center justify-between">
+                              <span>{room?.name_it || roomId}</span>
+                              <span className="text-sm text-muted-foreground">Base: €{room?.price_per_night}/notte</span>
+                            </h3>
+                            {prices.length > 0 ? (
+                              <div className="space-y-2 max-h-48 overflow-y-auto">
+                                {prices.map((price) => (
+                                  <div key={price.date} className="flex items-center justify-between p-2 bg-antique-gold/10 text-sm">
+                                    <div>
+                                      <span className="font-medium">{price.date}</span>
+                                      <span className="text-antique-gold font-bold ml-3">€{price.price}</span>
+                                      {price.reason && <span className="text-muted-foreground ml-2">- {price.reason}</span>}
+                                    </div>
+                                    <Button size="sm" variant="ghost" onClick={() => handleDeleteCustomPrice(roomId, price.date)} className="text-red-600">
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : <p className="text-muted-foreground text-sm">Nessun prezzo personalizzato</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Reviews Tab */}
               {activeTab === 'reviews' && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
