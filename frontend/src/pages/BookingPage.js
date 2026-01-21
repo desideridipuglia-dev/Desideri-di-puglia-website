@@ -61,22 +61,28 @@ const BookingPage = () => {
   const [couponStatus, setCouponStatus] = useState(null);
   const [couponDiscount, setCouponDiscount] = useState(null);
 
-  // Fetch rooms
+  // Fetch rooms and stay reasons
   useEffect(() => {
-    const fetchRooms = async () => {
+    const fetchInitialData = async () => {
       try {
-        const response = await axios.get(`${API}/rooms`);
-        setRooms(response.data);
-        if (preselectedRoom && response.data.find(r => r.id === preselectedRoom)) {
+        const [roomsRes, reasonsRes, upsellsRes] = await Promise.all([
+          axios.get(`${API}/rooms`),
+          axios.get(`${API}/stay-reasons`),
+          axios.get(`${API}/upsells?active_only=true`)
+        ]);
+        setRooms(roomsRes.data);
+        setStayReasons(reasonsRes.data);
+        setUpsells(upsellsRes.data);
+        if (preselectedRoom && roomsRes.data.find(r => r.id === preselectedRoom)) {
           setSelectedRoom(preselectedRoom);
         }
       } catch (error) {
-        console.error('Error fetching rooms:', error);
+        console.error('Error fetching initial data:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchRooms();
+    fetchInitialData();
   }, [preselectedRoom]);
 
   // Fetch availability when room is selected
