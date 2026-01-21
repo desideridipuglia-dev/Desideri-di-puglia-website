@@ -214,7 +214,9 @@ const BookingPage = () => {
         num_guests: parseInt(formData.num_guests),
         notes: formData.notes || null,
         origin_url: window.location.origin,
-        coupon_code: couponStatus === 'valid' ? formData.coupon_code : null
+        coupon_code: couponStatus === 'valid' ? formData.coupon_code : null,
+        upsell_ids: selectedUpsells.length > 0 ? selectedUpsells : null,
+        stay_reason: formData.stay_reason || null
       };
 
       const response = await axios.post(`${API}/bookings`, bookingData);
