@@ -668,6 +668,12 @@ async def get_availability(room_id: str, start_date: str, end_date: str):
         "date": {"$gte": start_date, "$lte": end_date}
     }, {"_id": 0}).to_list(1000)
     
+    # Get custom prices
+    custom_prices = await db.custom_prices.find({
+        "room_id": room_id,
+        "date": {"$gte": start_date, "$lte": end_date}
+    }, {"_id": 0}).to_list(1000)
+    
     # Calculate unavailable dates
     unavailable_dates = set()
     for booking in bookings:
