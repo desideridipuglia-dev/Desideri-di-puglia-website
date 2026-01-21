@@ -26,10 +26,14 @@ const HomePage = () => {
           axios.get(`${API}/rooms`),
           axios.get(`${API}/reviews?approved_only=true`)
         ]);
-        setRooms(roomsRes.data);
-        setReviews(reviewsRes.data);
+        // Aggiungiamo un controllo di sicurezza qui: se data è null, usiamo array vuoto
+        setRooms(roomsRes.data || []);
+        setReviews(reviewsRes.data || []);
       } catch (error) {
         console.error('Error fetching data:', error);
+        // In caso di errore, manteniamo gli array vuoti per non rompere la UI
+        setRooms([]);
+        setReviews([]);
       } finally {
         setLoading(false);
       }
@@ -69,7 +73,8 @@ const HomePage = () => {
     }
   ];
 
-  const displayReviews = reviews.length > 0 ? reviews : demoReviews;
+  // MODIFICA 1: Controllo di sicurezza su reviews (aggiunto reviews && ...)
+  const displayReviews = (reviews && reviews.length > 0) ? reviews : demoReviews;
 
   return (
     <div data-testid="home-page">
@@ -107,9 +112,17 @@ const HomePage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {rooms.map((room, index) => (
+              {/* MODIFICA 2: Aggiunto il punto interrogativo (rooms?.map) */}
+              {rooms?.map((room, index) => (
                 <RoomCard key={room.id} room={room} index={index} />
               ))}
+              
+              {/* Fallback visivo se non ci sono stanze caricate */}
+              {(!rooms || rooms.length === 0) && (
+                 <div className="col-span-full text-center text-gray-500 italic">
+                   No rooms available at the moment.
+                 </div>
+              )}
             </div>
           )}
         </div>
@@ -140,7 +153,8 @@ const HomePage = () => {
 
           {/* Reviews Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {displayReviews.slice(0, 3).map((review, index) => (
+            {/* MODIFICA 3: Aggiunto il punto interrogativo (displayReviews?.slice) */}
+            {displayReviews?.slice(0, 3).map((review, index) => (
               <ReviewCard key={review.id} review={review} index={index} />
             ))}
           </div>
