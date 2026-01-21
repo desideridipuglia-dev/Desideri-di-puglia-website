@@ -37,8 +37,16 @@ const BookingPage = () => {
   const [selectedRoom, setSelectedRoom] = useState(preselectedRoom || '');
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
   const [unavailableDates, setUnavailableDates] = useState([]);
+  const [customPrices, setCustomPrices] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Upsells state
+  const [upsells, setUpsells] = useState([]);
+  const [selectedUpsells, setSelectedUpsells] = useState([]);
+  
+  // Stay reasons
+  const [stayReasons, setStayReasons] = useState([]);
   
   const [formData, setFormData] = useState({
     guest_name: '',
@@ -46,10 +54,11 @@ const BookingPage = () => {
     guest_phone: '',
     num_guests: 1,
     notes: '',
-    coupon_code: ''
+    coupon_code: '',
+    stay_reason: ''
   });
   
-  const [couponStatus, setCouponStatus] = useState(null); // null, 'valid', 'invalid'
+  const [couponStatus, setCouponStatus] = useState(null);
   const [couponDiscount, setCouponDiscount] = useState(null);
 
   // Fetch rooms
