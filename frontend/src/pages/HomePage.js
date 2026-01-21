@@ -14,51 +14,41 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const HomePage = () => {
   const { t } = useLanguage();
-  // Inizializziamo sempre come array vuoti per sicurezza
   const [rooms, setRooms] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const roomsRef = useRef(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        console.log("Fetching data from:", API);
-        const [roomsRes, reviewsRes] = await Promise.all([
-          axios.get(`${API}/rooms`),
-          axios.get(`${API}/reviews?approved_only=true`)
-        ]);
-
-        // BLINDATURA 1: Controlliamo se è davvero un array prima di salvare
-        if (Array.isArray(roomsRes.data)) {
-            setRooms(roomsRes.data);
-        } else {
-            console.error("Rooms data is not an array:", roomsRes.data);
-            setRooms([]); // Fallback array vuoto
-        }
-
-        if (Array.isArray(reviewsRes.data)) {
-            setReviews(reviewsRes.data);
-        } else {
-             console.error("Reviews data is not an array:", reviewsRes.data);
-             setReviews([]); // Fallback array vuoto
-        }
-
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        // In caso di errore rete, array vuoti
-        setRooms([]);
-        setReviews([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  const scrollToRooms = () => {
-    roomsRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // --- DATI DEMO PER LE STANZE (Così le vedi subito!) ---
+  const demoRooms = [
+    {
+      id: 1,
+      name: "La Stanza della Nonna",
+      description_it: "Un tuffo nel passato con comfort moderni e vista sul centro storico.",
+      description_en: "A blast from the past with modern comforts and a view of the historic center.",
+      price: 120,
+      images: ["https://images.unsplash.com/photo-1590490360182-f33efe29a79d?q=80&w=2070&auto=format&fit=crop"],
+      max_guests: 2
+    },
+    {
+      id: 2,
+      name: "La Stanza del Pozzo",
+      description_it: "Atmosfera magica in pietra viva, perfetta per fughe romantiche.",
+      description_en: "Magical atmosphere in exposed stone, perfect for romantic getaways.",
+      price: 140,
+      images: ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2070&auto=format&fit=crop"],
+      max_guests: 2
+    },
+    {
+      id: 3,
+      name: "Suite Terrazza",
+      description_it: "Ampia suite luminosa con terrazza privata esclusiva.",
+      description_en: "Large bright suite with exclusive private terrace.",
+      price: 180,
+      images: ["https://images.unsplash.com/photo-1566665797739-1674de7a421a?q=80&w=2074&auto=format&fit=crop"],
+      max_guests: 3
+    }
+  ];
 
   const demoReviews = [
     {
@@ -87,8 +77,39 @@ const HomePage = () => {
     }
   ];
 
-  // BLINDATURA 2: Assicuriamoci che displayReviews sia un array valido
-  const safeReviews = Array.isArray(reviews) && reviews.length > 0 ? reviews : demoReviews;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        console.log("Tentativo connessione a:", API);
+        // Proviamo a scaricare i dati veri, ma non blocchiamo tutto se fallisce
+        const [roomsRes, reviewsRes] = await Promise.all([
+          axios.get(`${API}/rooms`).catch(e => ({ data: [] })), 
+          axios.get(`${API}/reviews?approved_only=true`).catch(e => ({ data: [] }))
+        ]);
+
+        if (Array.isArray(roomsRes.data) && roomsRes.data.length > 0) {
+            setRooms(roomsRes.data);
+        }
+        if (Array.isArray(reviewsRes.data) && reviewsRes.data.length > 0) {
+            setReviews(reviewsRes.data);
+        }
+
+      } catch (error) {
+        console.log('Uso dati demo perché il backend non risponde');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const scrollToRooms = () => {
+    roomsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Logica intelligente: Se abbiamo dati veri usiamo quelli, altrimenti usiamo quelli demo
+  const displayRooms = (rooms.length > 0) ? rooms : demoRooms;
+  const displayReviews = (reviews.length > 0) ? reviews : demoReviews;
 
   return (
     <div data-testid="home-page">
@@ -122,17 +143,9 @@ const HomePage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* BLINDATURA 3: Renderizziamo SOLO se è un array e ha elementi */}
-              {Array.isArray(rooms) && rooms.length > 0 ? (
-                rooms.map((room, index) => (
-                  <RoomCard key={room.id} room={room} index={index} />
-                ))
-              ) : (
-                <div className="col-span-full text-center text-gray-500 italic py-10">
-                   {/* Messaggio temporaneo finché il backend non è collegato */}
-                   Le nostre stanze saranno presto disponibili online.
-                </div>
-              )}
+              {displayRooms.map((room, index) => (
+                <RoomCard key={room.id} room={room} index={index} />
+              ))}
             </div>
           )}
         </div>
@@ -159,8 +172,7 @@ const HomePage = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {/* BLINDATURA 4: Slice e Map protetti */}
-            {Array.isArray(safeReviews) && safeReviews.slice(0, 3).map((review, index) => (
+            {displayReviews.slice(0, 3).map((review, index) => (
               <ReviewCard key={review.id} review={review} index={index} />
             ))}
           </div>
