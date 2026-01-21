@@ -4,16 +4,17 @@ import axios from 'axios';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 import { Calendar } from '../components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { 
   Bed, Calendar as CalendarIcon, MessageSquare, 
   Edit, Check, X, Mail, Tag, Lock, Trash2, Plus,
-  BarChart3, Image, LogOut, Eye, TrendingUp, Users, Euro,
-  ArrowUp, ArrowDown, Home, Coffee
+  BarChart3, Image, LogOut, TrendingUp, Euro,
+  ArrowUp, ArrowDown, Home, Coffee, Gift, DollarSign
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
