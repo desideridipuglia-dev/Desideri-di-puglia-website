@@ -236,6 +236,17 @@ const AdminPage = () => {
       } else if (activeTab === 'coupons') {
         const response = await axios.get(`${API}/coupons`);
         setCoupons(response.data);
+      } else if (activeTab === 'upsells') {
+        const response = await axios.get(`${API}/upsells`);
+        setUpsells(response.data);
+      } else if (activeTab === 'pricing') {
+        const [roomsRes, nonnaPrices, pozzoPrices] = await Promise.all([
+          axios.get(`${API}/rooms`),
+          axios.get(`${API}/custom-prices/nonna?start_date=${format(new Date(), 'yyyy-MM-dd')}&end_date=${format(addDays(new Date(), 365), 'yyyy-MM-dd')}`),
+          axios.get(`${API}/custom-prices/pozzo?start_date=${format(new Date(), 'yyyy-MM-dd')}&end_date=${format(addDays(new Date(), 365), 'yyyy-MM-dd')}`)
+        ]);
+        setRooms(roomsRes.data);
+        setCustomPrices({ nonna: nonnaPrices.data, pozzo: pozzoPrices.data });
       } else if (activeTab === 'reviews') {
         const response = await axios.get(`${API}/reviews?approved_only=false`);
         setReviews(response.data);
