@@ -178,6 +178,59 @@ class PaymentTransaction(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class CustomPrice(BaseModel):
+    """Custom price for specific date and room"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    room_id: str
+    date: str  # ISO date string
+    price: float
+    reason: Optional[str] = None  # e.g., "Alta stagione", "Evento speciale"
+
+class CustomPriceCreate(BaseModel):
+    room_id: str
+    start_date: str
+    end_date: str
+    price: float
+    reason: Optional[str] = None
+
+class Upsell(BaseModel):
+    """Upsell/Extra item"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    slug: str  # unique identifier
+    title_it: str
+    title_en: str
+    description_it: str  # Persuasive copy
+    description_en: str
+    price: float
+    min_nights: int = 0  # Minimum nights to show this upsell (0 = always)
+    is_active: bool = True
+    order: int = 0
+    icon: str = "gift"  # Icon name for frontend
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UpsellCreate(BaseModel):
+    slug: str
+    title_it: str
+    title_en: str
+    description_it: str
+    description_en: str
+    price: float
+    min_nights: int = 0
+    icon: str = "gift"
+
+class UpsellUpdate(BaseModel):
+    title_it: Optional[str] = None
+    title_en: Optional[str] = None
+    description_it: Optional[str] = None
+    description_en: Optional[str] = None
+    price: Optional[float] = None
+    min_nights: Optional[int] = None
+    is_active: Optional[bool] = None
+    icon: Optional[str] = None
+    order: Optional[int] = None
+
 class BlockedDate(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
