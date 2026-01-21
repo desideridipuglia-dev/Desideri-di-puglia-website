@@ -572,12 +572,73 @@ const BookingPage = () => {
 
                 {selectedRoomData && nights > 0 && (
                   <div className="pt-6 space-y-4">
+                    {/* Room price breakdown */}
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">
-                        €{selectedRoomData.price_per_night} x {nights} {t('booking.nights')}
+                        {language === 'it' ? 'Soggiorno' : 'Accommodation'} ({nights} {t('booking.nights')})
                       </span>
-                      <span className="text-adriatic-blue">€{subtotal}</span>
+                      <span className="text-adriatic-blue">€{roomPrice.toFixed(2)}</span>
                     </div>
+                    
+                    {/* Show daily price breakdown if there are custom prices */}
+                    {Object.keys(customPrices).length > 0 && (
+                      <div className="text-xs text-muted-foreground pl-2 border-l-2 border-puglia-stone/30 space-y-1">
+                        {(() => {
+                          let current = new Date(dateRange.from);
+                          const end = new Date(dateRange.to);
+                          const prices = [];
+                          while (current < end) {
+                            const dateStr = format(current, 'yyyy-MM-dd');
+                            const dayPrice = customPrices[dateStr] || selectedRoomData.price_per_night;
+                            const isCustom = customPrices[dateStr] !== undefined;
+                            prices.push(
+                              <div key={dateStr} className="flex justify-between">
+                                <span>{format(current, 'dd/MM', { locale })}</span>
+                                <span className={isCustom ? 'text-antique-gold' : ''}>
+                                  €{dayPrice}
+                                  {isCustom && ' ★'}
+                                </span>
+                              </div>
+                            );
+                            current = addDays(current, 1);
+                          }
+                          return prices.length <= 7 ? prices : (
+                            <span className="italic">{language === 'it' ? 'Prezzi variabili per data' : 'Variable daily prices'}</span>
+                          );
+                        })()}
+                      </div>
+                    )}
+                    
+                    {/* Upsells */}
+                    {selectedUpsells.length > 0 && (
+                      <>
+                        <div className="border-t border-puglia-stone/30 pt-4">
+                          <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                            {language === 'it' ? 'Extra selezionati' : 'Selected extras'}
+                          </span>
+                        </div>
+                        {selectedUpsells.map(upsellId => {
+                          const upsell = upsells.find(u => u.id === upsellId);
+                          if (!upsell) return null;
+                          return (
+                            <div key={upsellId} className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                {language === 'it' ? upsell.title_it : upsell.title_en}
+                              </span>
+                              <span className="text-adriatic-blue">+€{upsell.price.toFixed(2)}</span>
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+                    
+                    {/* Subtotal if there are upsells */}
+                    {selectedUpsells.length > 0 && (
+                      <div className="flex justify-between text-sm pt-2 border-t border-puglia-stone/30">
+                        <span className="text-muted-foreground">{language === 'it' ? 'Subtotale' : 'Subtotal'}</span>
+                        <span className="text-adriatic-blue">€{subtotal.toFixed(2)}</span>
+                      </div>
+                    )}
                     
                     {/* Show discount if applied */}
                     {discountAmount > 0 && (
