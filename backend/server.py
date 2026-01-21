@@ -686,7 +686,129 @@ async def get_availability(room_id: str, start_date: str, end_date: str):
     for block in blocked:
         unavailable_dates.add(block["date"])
     
-    return {"unavailable_dates": list(unavailable_dates)}
+    # Build custom prices dict
+    prices_by_date = {cp["date"]: cp["price"] for cp in custom_prices}
+    
+    return {
+        "unavailable_dates": list(unavailable_dates),
+        "custom_prices": prices_by_date
+    }
+
+
+# ==================== CUSTOM PRICES ENDPOINTS ====================
+
+@api_router.get("/custom-prices/{room_id}")
+async def get_custom_prices(room_id: str, start_date: Optional[str] = None, end_date: Optional[str] = None):
+    """Get custom prices for a room"""
+    query = {"room_id": room_id}
+    if start_date and end_date:
+        query["date"] = {"$gte": start_date, "$lte": end_date}
+    prices = await db.custom_prices.find(query, {"_id": 0}).to_list(1000)
+    return prices
+
+@api_router.post("/custom-prices")
+async def set_custom_prices(data: CustomPriceCreate):
+    """Set custom price for a date range"""
+    current = datetime.strptime(data.start_date, "%Y-%m-%d")
+    end = datetime.strptime(data.end_date, "%Y-%m-%d")
+    count = 0
+    
+    while current <= end:
+        date_str = current.strftime("%Y-%m-%d")
+        await db.custom_prices.update_one(
+            {"room_id": data.room_id, "date": date_str},
+            {"$set": {
+                "room_id": data.room_id,
+                "date": date_str,
+                "price": data.price,
+                "reason": data.reason
+            }},
+            upsert=True
+        )
+        count += 1
+        current += timedelta(days=1)
+    
+    return {"message": f"Custom prices set for {count} days"}
+
+@api_router.delete("/custom-prices/{room_id}/{date}")
+async def delete_custom_price(room_id: str, date: str):
+    """Delete custom price for a specific date"""
+    await db.custom_prices.delete_one({"room_id": room_id, "date": date})
+    return {"message": "Custom price deleted"}
+
+@api_router.delete("/custom-prices/{room_id}")
+async def delete_all_custom_prices(room_id: str, start_date: Optional[str] = None, end_date: Optional[str] = None):
+    """Delete all custom prices for a room (optionally in a date range)"""
+    query = {"room_id": room_id}
+    if start_date and end_date:
+        query["date"] = {"$gte": start_date, "$lte": end_date}
+    result = await db.custom_prices.delete_many(query)
+    return {"message": f"Deleted {result.deleted_count} custom prices"}
+
+
+# ==================== UPSELLS ENDPOINTS ====================
+
+@api_router.get("/upsells")
+async def get_upsells(active_only: bool = False):
+    """Get all upsells"""
+    query = {"is_active": True} if active_only else {}
+    upsells = await db.upsells.find(query, {"_id": 0}).sort("order", 1).to_list(100)
+    return upsells
+
+@api_router.get("/upsells/{upsell_id}")
+async def get_upsell(upsell_id: str):
+    """Get single upsell by ID"""
+    upsell = await db.upsells.find_one({"id": upsell_id}, {"_id": 0})
+    if not upsell:
+        raise HTTPException(status_code=404, detail="Upsell not found")
+    return upsell
+
+@api_router.post("/upsells")
+async def create_upsell(data: UpsellCreate):
+    """Create new upsell"""
+    existing = await db.upsells.find_one({"slug": data.slug})
+    if existing:
+        raise HTTPException(status_code=400, detail="Upsell with this slug already exists")
+    
+    upsell = Upsell(**data.model_dump())
+    upsell_dict = upsell.model_dump()
+    upsell_dict["created_at"] = upsell_dict["created_at"].isoformat()
+    await db.upsells.insert_one(upsell_dict)
+    return {"message": "Upsell created", "id": upsell.id}
+
+@api_router.put("/upsells/{upsell_id}")
+async def update_upsell(upsell_id: str, data: UpsellUpdate):
+    """Update upsell"""
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    if update_data:
+        await db.upsells.update_one({"id": upsell_id}, {"$set": update_data})
+    upsell = await db.upsells.find_one({"id": upsell_id}, {"_id": 0})
+    return upsell
+
+@api_router.delete("/upsells/{upsell_id}")
+async def delete_upsell(upsell_id: str):
+    """Delete upsell"""
+    await db.upsells.delete_one({"id": upsell_id})
+    return {"message": "Upsell deleted"}
+
+
+# ==================== STAY REASONS ====================
+
+STAY_REASONS = [
+    {"id": "vacanza", "it": "Vacanza e relax", "en": "Holiday and relaxation"},
+    {"id": "romantico", "it": "Weekend romantico", "en": "Romantic weekend"},
+    {"id": "famiglia", "it": "Viaggio in famiglia", "en": "Family trip"},
+    {"id": "lavoro", "it": "Viaggio di lavoro", "en": "Business trip"},
+    {"id": "evento", "it": "Evento speciale", "en": "Special event"},
+    {"id": "esplorazione", "it": "Esplorazione della Puglia", "en": "Exploring Puglia"},
+    {"id": "altro", "it": "Altro", "en": "Other"}
+]
+
+@api_router.get("/stay-reasons")
+async def get_stay_reasons():
+    """Get all stay reason options"""
+    return STAY_REASONS
+
 
 @api_router.post("/blocked-dates")
 async def add_blocked_date(room_id: str, date: str, reason: Optional[str] = None):
