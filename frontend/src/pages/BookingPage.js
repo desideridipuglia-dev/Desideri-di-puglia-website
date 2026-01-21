@@ -95,16 +95,46 @@ const BookingPage = () => {
         const endDate = format(addDays(new Date(), 365), 'yyyy-MM-dd');
         const response = await axios.get(`${API}/availability/${selectedRoom}?start_date=${startDate}&end_date=${endDate}`);
         setUnavailableDates(response.data.unavailable_dates.map(d => new Date(d)));
+        setCustomPrices(response.data.custom_prices || {});
       } catch (error) {
         console.error('Error fetching availability:', error);
       }
     };
     fetchAvailability();
+    // Reset selected upsells when room changes
+    setSelectedUpsells([]);
   }, [selectedRoom]);
 
   const selectedRoomData = rooms.find(r => r.id === selectedRoom);
   const nights = dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) : 0;
-  const subtotal = selectedRoomData ? nights * selectedRoomData.price_per_night : 0;
+  
+  // Calculate room price with dynamic pricing
+  const calculateRoomPrice = () => {
+    if (!selectedRoomData || !dateRange.from || !dateRange.to) return 0;
+    
+    let total = 0;
+    let current = new Date(dateRange.from);
+    const end = new Date(dateRange.to);
+    
+    while (current < end) {
+      const dateStr = format(current, 'yyyy-MM-dd');
+      const dayPrice = customPrices[dateStr] || selectedRoomData.price_per_night;
+      total += dayPrice;
+      current = addDays(current, 1);
+    }
+    
+    return total;
+  };
+  
+  const roomPrice = calculateRoomPrice();
+  
+  // Calculate upsells total
+  const upsellsTotal = selectedUpsells.reduce((sum, upsellId) => {
+    const upsell = upsells.find(u => u.id === upsellId);
+    return sum + (upsell?.price || 0);
+  }, 0);
+  
+  const subtotal = roomPrice + upsellsTotal;
   
   // Calculate discount
   let discountAmount = 0;
