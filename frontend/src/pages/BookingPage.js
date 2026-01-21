@@ -10,11 +10,22 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { format, differenceInDays, addDays, isBefore, isAfter, isSameDay } from 'date-fns';
+import { format, differenceInDays, addDays, isBefore, isSameDay } from 'date-fns';
 import { it, enUS } from 'date-fns/locale';
-import { CalendarIcon, Users, ArrowRight, Loader2, Tag } from 'lucide-react';
+import { ArrowRight, Loader2, Wine, Grape, Anchor, ShoppingBasket, Sparkles, Coffee, Gift, Check } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+// Icon mapping for upsells
+const UPSELL_ICONS = {
+  wine: Wine,
+  grape: Grape,
+  anchor: Anchor,
+  'shopping-basket': ShoppingBasket,
+  sparkles: Sparkles,
+  coffee: Coffee,
+  gift: Gift
+};
 
 const BookingPage = () => {
   const { language, t } = useLanguage();
