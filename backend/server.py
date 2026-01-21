@@ -1641,6 +1641,7 @@ async def get_top_stats():
 async def startup_event():
     await init_rooms()
     await init_settings()
+    await init_upsells()
     logger.info("Application startup complete")
 
 
