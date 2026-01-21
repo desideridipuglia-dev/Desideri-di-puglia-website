@@ -126,10 +126,14 @@ class Booking(BaseModel):
     check_out: str  # ISO date string
     num_guests: int
     total_price: float
+    room_price: float = 0.0  # Base room price
+    upsells_total: float = 0.0  # Total upsells price
+    upsells: List[str] = []  # List of upsell IDs
     status: str = "pending"  # pending, confirmed, cancelled, completed
     payment_status: str = "pending"  # pending, paid, refunded
     stripe_session_id: Optional[str] = None
     notes: Optional[str] = None
+    stay_reason: Optional[str] = None  # Motivo del soggiorno
     coupon_code: Optional[str] = None
     discount_amount: float = 0.0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
