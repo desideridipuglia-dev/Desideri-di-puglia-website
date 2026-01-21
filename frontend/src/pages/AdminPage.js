@@ -173,7 +173,9 @@ const AdminPage = () => {
     if (token) {
       try {
         await axios.post(`${API}/admin/logout?token=${token}`);
-      } catch {}
+      } catch (e) {
+        // Logout error can be ignored
+      }
     }
     localStorage.removeItem('adminToken');
     setToken(null);
@@ -184,6 +186,7 @@ const AdminPage = () => {
     if (isAuthenticated) {
       fetchData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, isAuthenticated, selectedYear, dateFilter, customStart, customEnd]);
 
   const getDateRange = () => {
