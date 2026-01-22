@@ -43,7 +43,7 @@ SMTP_USER = os.environ.get('SMTP_USER', 'desideridipuglia@gmail.com')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD') 
 SENDER_EMAIL = os.environ.get('MAIL_FROM', 'desideridipuglia@gmail.com')
 
-# ADMIN CREDENTIALS (MODIFICA: CREDENZIALI FISSE PER ACCESSO SICURO)
+# ADMIN CREDENTIALS (FISSE PER SICUREZZA)
 ADMIN_USERNAME = "admin"
 plain_password = "pippo" 
 ADMIN_PASSWORD_HASH = hashlib.sha256(plain_password.encode()).hexdigest()
@@ -54,7 +54,11 @@ app = FastAPI()
 security = HTTPBasic()
 api_router = APIRouter(prefix="/api")
 
-logging.basicConfig(level=logging.INFO)
+# Configurazione Logging Avanzata
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 # ==================== MODELS ====================
@@ -253,8 +257,6 @@ class SiteImagesUpdate(BaseModel):
 # ==================== EMAIL LOGIC (GMAIL SMTP FIXED) ====================
 
 def generate_booking_confirmation_email(booking: dict, room: dict, language: str = "it") -> tuple:
-    """Generate HTML email for booking confirmation"""
-    
     room_name = room.get("name_it") if language == "it" else room.get("name_en")
     
     if language == "it":
@@ -806,12 +808,25 @@ async def update_site_images(data: SiteImagesUpdate):
     return {"status": "updated"}
 
 # --- AUTH ---
+# HELPER
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
 @api_router.post("/admin/login")
 async def admin_login(data: AdminLogin):
-    if data.username == ADMIN_USERNAME and hash_password(data.password) == ADMIN_PASSWORD_HASH:
+    # --- DEBUG LOGGING INIZIO ---
+    received_hash = hash_password(data.password)
+    logger.info(f"👉 DEBUG LOGIN: Utente ricevuto='{data.username}' (atteso='{ADMIN_USERNAME}')")
+    logger.info(f"👉 DEBUG LOGIN: Hash ricevuto='{received_hash}'")
+    logger.info(f"👉 DEBUG LOGIN: Hash atteso='{ADMIN_PASSWORD_HASH}'")
+    # --- DEBUG LOGGING FINE ---
+
+    if data.username == ADMIN_USERNAME and received_hash == ADMIN_PASSWORD_HASH:
         token = secrets.token_urlsafe(32)
         await db.admin_sessions.insert_one({"token": token, "expires_at": (datetime.now(timezone.utc)+timedelta(hours=24)).isoformat()})
         return {"success": True, "token": token}
+    
+    logger.error("❌ LOGIN FALLITO: Credenziali errate.")
     raise HTTPException(401, "Invalid")
 
 @api_router.get("/admin/verify")
