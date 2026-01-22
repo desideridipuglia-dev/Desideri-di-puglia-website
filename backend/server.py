@@ -38,9 +38,12 @@ SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'prenotazioni@desideridipuglia.com
 stripe.api_key = os.environ.get('STRIPE_API_KEY')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
 
-# Admin credentials
+# ==================== ADMIN CREDENTIALS (FIXED) ====================
+# Qui stava il problema: ora legge la password in chiaro da Render e la cripta
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH', '')
+plain_password = os.environ.get('ADMIN_PASSWORD', 'admin') # Legge 'pippo' o la tua password
+ADMIN_PASSWORD_HASH = hashlib.sha256(plain_password.encode()).hexdigest() # La trasforma in hash
+# ===================================================================
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -1378,6 +1381,7 @@ async def admin_login(login_data: AdminLogin):
     """Verify admin credentials and return token"""
     password_hash = hash_password(login_data.password)
     
+    # Ora confrontiamo gli HASH, quindi è sicuro
     if login_data.username == ADMIN_USERNAME and password_hash == ADMIN_PASSWORD_HASH:
         # Generate a simple session token
         token = secrets.token_urlsafe(32)
@@ -1673,7 +1677,7 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=os.environ.get('BACKEND_CORS_ORIGINS', '*').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
 )
