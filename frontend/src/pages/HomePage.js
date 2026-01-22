@@ -10,7 +10,8 @@ import { Button } from '../components/ui/button';
 import { ArrowRight, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+// MODIFICA FONDAMENTALE: Indirizzo fisso per garantire la connessione
+const API = "https://desideri-backend.onrender.com/api";
 
 const HomePage = () => {
   const { t } = useLanguage();
@@ -19,7 +20,7 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const roomsRef = useRef(null);
 
-  // --- DATI DEMO PER LE STANZE (Così le vedi subito!) ---
+  // --- DATI DEMO PER LE STANZE (Fallback di sicurezza) ---
   const demoRooms = [
     {
       id: 1,
@@ -81,21 +82,28 @@ const HomePage = () => {
     const fetchData = async () => {
       try {
         console.log("Tentativo connessione a:", API);
-        // Proviamo a scaricare i dati veri, ma non blocchiamo tutto se fallisce
+        // Chiamata parallela per stanze e recensioni
         const [roomsRes, reviewsRes] = await Promise.all([
-          axios.get(`${API}/rooms`).catch(e => ({ data: [] })), 
-          axios.get(`${API}/reviews?approved_only=true`).catch(e => ({ data: [] }))
+          axios.get(`${API}/rooms`).catch(e => {
+            console.error("Errore fetch rooms:", e);
+            return { data: [] };
+          }), 
+          axios.get(`${API}/reviews?approved_only=true`).catch(e => {
+             console.error("Errore fetch reviews:", e);
+             return { data: [] };
+          })
         ]);
 
         if (Array.isArray(roomsRes.data) && roomsRes.data.length > 0) {
             setRooms(roomsRes.data);
+            console.log("Stanze caricate dal DB:", roomsRes.data.length);
         }
         if (Array.isArray(reviewsRes.data) && reviewsRes.data.length > 0) {
             setReviews(reviewsRes.data);
         }
 
       } catch (error) {
-        console.log('Uso dati demo perché il backend non risponde');
+        console.error('Errore generale fetch:', error);
       } finally {
         setLoading(false);
       }
@@ -107,7 +115,7 @@ const HomePage = () => {
     roomsRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Logica intelligente: Se abbiamo dati veri usiamo quelli, altrimenti usiamo quelli demo
+  // Se il server ha restituito dati, usa quelli. Altrimenti usa i demo.
   const displayRooms = (rooms.length > 0) ? rooms : demoRooms;
   const displayReviews = (reviews.length > 0) ? reviews : demoReviews;
 
@@ -138,8 +146,8 @@ const HomePage = () => {
           </motion.div>
 
           {loading ? (
-            <div className="flex justify-center">
-              <div className="spinner" />
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-adriatic-blue" />
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
