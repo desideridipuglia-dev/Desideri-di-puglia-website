@@ -32,16 +32,15 @@ if not mongo_url:
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ.get('DB_NAME', 'desideri_db')]
 
-# STRIPE CONFIGURATION (FIXED)
-# Usiamo STRIPE_SECRET_KEY perché è quella che hai su Render
+# STRIPE CONFIGURATION
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY') 
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
 
-# EMAIL CONFIGURATION (GMAIL SMTP FIXED)
+# EMAIL CONFIGURATION (GMAIL SMTP)
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
 SMTP_USER = os.environ.get('SMTP_USER', 'desideridipuglia@gmail.com')
-SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD') # La tua password delle app (bpyh...)
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD') 
 SENDER_EMAIL = os.environ.get('MAIL_FROM', 'desideridipuglia@gmail.com')
 
 # ADMIN CREDENTIALS
@@ -55,32 +54,10 @@ app = FastAPI()
 security = HTTPBasic()
 api_router = APIRouter(prefix="/api")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ==================== AUTH FUNCTIONS ====================
-
-def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
-
-def verify_admin(credentials: HTTPBasicCredentials = Depends(security)):
-    correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
-    correct_password = secrets.compare_digest(
-        hash_password(credentials.password), 
-        ADMIN_PASSWORD_HASH
-    )
-    if not (correct_username and correct_password):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Basic"},
-        )
-    return credentials.username
-
-# ==================== MODELS (TUTTI I TUOI MODELLI ORIGINALI) ====================
+# ==================== MODELS ====================
 
 class AdminLogin(BaseModel):
     username: str
@@ -115,17 +92,6 @@ class RoomUpdate(BaseModel):
     images: Optional[List[RoomImage]] = None
     name_it: Optional[str] = None
     name_en: Optional[str] = None
-
-class SiteImages(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = "site_images"
-    hero_image: str = "https://images.unsplash.com/photo-1614323777193-379d5e6797f7?w=1920"
-    cta_background: str = "https://images.unsplash.com/photo-1652376172934-95d8d0a8ec47?w=1920"
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class SiteImagesUpdate(BaseModel):
-    hero_image: Optional[str] = None
-    cta_background: Optional[str] = None
 
 class Booking(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -165,22 +131,10 @@ class BookingCreate(BaseModel):
     upsell_ids: Optional[List[str]] = None
     stay_reason: Optional[str] = None
 
-class Review(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    booking_id: str
-    room_id: str
-    guest_name: str
-    rating: int
-    comment_it: Optional[str] = None
-    comment_en: Optional[str] = None
-    is_approved: bool = False
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class ReviewCreate(BaseModel):
-    booking_id: str
-    rating: int
-    comment: str
+class ContactMessage(BaseModel):
+    name: str
+    email: EmailStr
+    message: str
     language: str = "it"
 
 class PaymentTransaction(BaseModel):
@@ -247,13 +201,6 @@ class UpsellUpdate(BaseModel):
     icon: Optional[str] = None
     order: Optional[int] = None
 
-class BlockedDate(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    room_id: str
-    date: str
-    reason: Optional[str] = None
-
 class Coupon(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -281,11 +228,27 @@ class CouponCreate(BaseModel):
     description_it: Optional[str] = None
     description_en: Optional[str] = None
 
-class ContactMessage(BaseModel):
-    name: str
-    email: EmailStr
-    message: str
+class Review(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    booking_id: str
+    room_id: str
+    guest_name: str
+    rating: int
+    comment_it: Optional[str] = None
+    comment_en: Optional[str] = None
+    is_approved: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ReviewCreate(BaseModel):
+    booking_id: str
+    rating: int
+    comment: str
     language: str = "it"
+
+class SiteImagesUpdate(BaseModel):
+    hero_image: Optional[str] = None
+    cta_background: Optional[str] = None
 
 # ==================== EMAIL LOGIC (GMAIL SMTP FIXED) ====================
 
@@ -378,13 +341,73 @@ async def send_contact_notification(contact: ContactMessage):
     """
     return await asyncio.to_thread(_send_email_sync, SENDER_EMAIL, subject, html)
 
-# ==================== ENDPOINTS (TUTTI GLI ENDPOINT ORIGINALI) ====================
+# ==================== INITIALIZATION FUNCTIONS (REINSERITE) ====================
+
+async def init_rooms():
+    rooms_count = await db.rooms.count_documents({})
+    if rooms_count == 0:
+        default_rooms = [
+            {
+                "id": "nonna",
+                "slug": "stanza-della-nonna",
+                "name_it": "Stanza della Nonna",
+                "name_en": "Grandmother's Room",
+                "description_it": "Un rifugio intimo...",
+                "description_en": "An intimate retreat...",
+                "price_per_night": 80.0,
+                "max_guests": 3,
+                "images": [{"id": "img1", "url": "https://images.unsplash.com/photo-1730322011993-592266c14831", "alt_it": "Foto", "alt_en": "Photo", "order": 0}],
+                "amenities": ["wifi", "ac"],
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            },
+            {
+                "id": "pozzo",
+                "slug": "stanza-del-pozzo",
+                "name_it": "Stanza del Pozzo",
+                "name_en": "Well Room",
+                "description_it": "Oasi di pace...",
+                "description_en": "Oasis of peace...",
+                "price_per_night": 80.0,
+                "max_guests": 3,
+                "images": [{"id": "img2", "url": "https://images.unsplash.com/photo-1730322046135-a754d71b7ec0", "alt_it": "Foto", "alt_en": "Photo", "order": 0}],
+                "amenities": ["wifi", "ac"],
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        ]
+        await db.rooms.insert_many(default_rooms)
+        logger.info("Default rooms initialized")
+
+async def init_settings():
+    settings = await db.settings.find_one({"id": "settings"})
+    if not settings:
+        default_settings = {
+            "id": "settings",
+            "default_price_nonna": 80.0,
+            "default_price_pozzo": 80.0,
+            "min_nights": 1
+        }
+        await db.settings.insert_one(default_settings)
+        logger.info("Default settings initialized")
+
+async def init_upsells():
+    upsells_count = await db.upsells.count_documents({})
+    if upsells_count == 0:
+        default_upsells = [
+            {"id": str(uuid.uuid4()), "slug": "prosecco", "title_it": "Bollicine", "title_en": "Bubbles", "description_it": "Prosecco...", "description_en": "Prosecco...", "price": 25.0, "is_active": True, "created_at": datetime.now(timezone.utc).isoformat()},
+            {"id": str(uuid.uuid4()), "slug": "colazione", "title_it": "Colazione", "title_en": "Breakfast", "description_it": "Colazione...", "description_en": "Breakfast...", "price": 15.0, "is_active": True, "created_at": datetime.now(timezone.utc).isoformat()}
+        ]
+        await db.upsells.insert_many(default_upsells)
+        logger.info("Default upsells initialized")
+
+# ==================== ENDPOINTS ====================
 
 @api_router.get("/")
 async def root():
     return {"message": "Desideri di Puglia API", "version": "1.0.0"}
 
-@api_router.get("/rooms", response_model=List[dict])
+@api_router.get("/rooms")
 async def get_rooms():
     return await db.rooms.find({}, {"_id": 0}).to_list(100)
 
@@ -541,7 +564,7 @@ async def validate_coupon(code: str, nights: int = 1):
     coupon = await db.coupons.find_one({"code": code.upper(), "is_active": True}, {"_id": 0})
     if not coupon:
         raise HTTPException(status_code=404, detail="Coupon invalid")
-    # (Validazione semplificata, puoi riaggiungere i check completi se vuoi)
+    # (Validazione semplificata)
     return {
         "valid": True,
         "discount_type": coupon["discount_type"],
@@ -663,7 +686,12 @@ async def create_booking(booking_data: BookingCreate):
     pt_dict["updated_at"] = pt_dict["updated_at"].isoformat()
     await db.payment_transactions.insert_one(pt_dict)
     
-    return {"checkout_url": session.url}
+    return {
+        "booking_id": booking.id,
+        "checkout_url": session.url, 
+        "session_id": session.id,
+        "total_price": total_price
+    }
 
 @api_router.get("/bookings/status/{session_id}")
 async def check_booking_status(session_id: str):
@@ -760,6 +788,10 @@ async def get_analytics_overview(start_date: str = None, end_date: str = None):
 async def get_monthly(year: int = 2025):
     return {"months": []}
 
+@api_router.get("/analytics/recent-bookings")
+async def get_recent_bookings():
+    return []
+
 # --- SITE IMAGES ---
 @api_router.get("/site-images")
 async def get_site_images():
@@ -789,6 +821,11 @@ async def verify_token(token: str):
         return {"valid": True}
     raise HTTPException(401, "Expired")
 
+@api_router.post("/admin/logout")
+async def logout(token: str):
+    await db.admin_sessions.delete_one({"token": token})
+    return {"success": True}
+
 @api_router.get("/stay-reasons")
 async def get_stay_reasons():
     return [{"id": "vacanza", "it": "Vacanza", "en": "Holiday"}, {"id": "lavoro", "it": "Lavoro", "en": "Work"}]
@@ -800,6 +837,7 @@ async def startup():
         await init_rooms()
     await init_settings()
     await init_upsells()
+    logger.info("Application startup complete")
 
 # APP SETUP
 app.include_router(api_router)
@@ -810,3 +848,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    client.close()
