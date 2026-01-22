@@ -18,7 +18,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+// MODIFICA FONDAMENTALE: Indirizzo backend fisso
+const API = "https://desideri-backend.onrender.com/api";
 
 const amenityIcons = {
   wifi: Wifi,
@@ -39,6 +40,7 @@ const RoomDetailPage = () => {
   useEffect(() => {
     const fetchRoom = async () => {
       try {
+        console.log(`Fetching room: ${API}/rooms/${roomId}`);
         const response = await axios.get(`${API}/rooms/${roomId}`);
         setRoom(response.data);
       } catch (error) {
@@ -62,6 +64,7 @@ const RoomDetailPage = () => {
     return (
       <div className="min-h-screen pt-20 flex items-center justify-center bg-puglia-sand">
         <p>Room not found</p>
+        <Link to="/" className="text-adriatic-blue underline ml-2">Torna alla Home</Link>
       </div>
     );
   }
@@ -130,8 +133,8 @@ const RoomDetailPage = () => {
 
         {/* Back Button */}
         <Link 
-          to="/rooms" 
-          className="absolute top-24 left-6 flex items-center gap-2 text-white hover:text-antique-gold transition-colors"
+          to="/" 
+          className="absolute top-24 left-6 flex items-center gap-2 text-white hover:text-antique-gold transition-colors z-20"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm uppercase tracking-wider">{t('common.back')}</span>

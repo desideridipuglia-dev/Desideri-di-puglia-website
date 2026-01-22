@@ -17,7 +17,8 @@ import {
   ArrowUp, ArrowDown, Home, Coffee, Gift, DollarSign
 } from 'lucide-react';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+// MODIFICA FONDAMENTALE: Indirizzo backend fisso per far funzionare il login
+const API = "https://desideri-backend.onrender.com/api";
 
 // Login Component
 const AdminLogin = ({ onLogin }) => {
