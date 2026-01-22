@@ -5,7 +5,8 @@ import axios from 'axios';
 import ReviewCard from '../components/ReviewCard';
 import { Star } from 'lucide-react';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+// MODIFICA FONDAMENTALE: Indirizzo backend fisso per leggere le recensioni
+const API = "https://desideri-backend.onrender.com/api";
 
 const ReviewsPage = () => {
   const { language, t } = useLanguage();
@@ -15,6 +16,7 @@ const ReviewsPage = () => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
+        console.log(`Fetching reviews from: ${API}/reviews`);
         const response = await axios.get(`${API}/reviews?approved_only=true`);
         setReviews(response.data);
       } catch (error) {
@@ -26,7 +28,7 @@ const ReviewsPage = () => {
     fetchReviews();
   }, []);
 
-  // Demo reviews if none exist
+  // Demo reviews if none exist (Fallback)
   const demoReviews = [
     {
       id: '1',
@@ -78,6 +80,7 @@ const ReviewsPage = () => {
     }
   ];
 
+  // Se il server risponde con dati vuoti, usa quelli demo per bellezza, altrimenti usa quelli veri
   const displayReviews = reviews.length > 0 ? reviews : demoReviews;
   const averageRating = displayReviews.reduce((acc, r) => acc + r.rating, 0) / displayReviews.length;
 

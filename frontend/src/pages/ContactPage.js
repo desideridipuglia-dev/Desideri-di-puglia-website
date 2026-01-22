@@ -9,7 +9,8 @@ import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
 import { MapPin, Phone, Mail, Clock, Globe, Send, Loader2 } from 'lucide-react';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+// MODIFICA FONDAMENTALE: Indirizzo backend fisso per inviare i messaggi
+const API = "https://desideri-backend.onrender.com/api";
 
 const ContactPage = () => {
   const { language, t } = useLanguage();
@@ -36,6 +37,7 @@ const ContactPage = () => {
     setSubmitting(true);
 
     try {
+      console.log(`Sending message to: ${API}/contact`);
       await axios.post(`${API}/contact`, {
         ...formData,
         language
@@ -149,7 +151,7 @@ const ContactPage = () => {
               {/* Map Placeholder */}
               <div className="mt-12 h-64 bg-puglia-stone relative overflow-hidden">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.5!2d16.2833!3d41.3167!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDE5JzAwLjEiTiAxNsKwMTcnMDAuMCJF!5e0!3m2!1sen!2sit!4v1234567890"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3003.5678873738!2d16.2842!3d41.3194!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1338230000000000%3A0x0!2zNDHCsDE5JzEwLjAiTiAxNsKwMTcnMDMuMCJF!5e0!3m2!1sit!2sit!4v1600000000000!5m2!1sit!2sit"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}

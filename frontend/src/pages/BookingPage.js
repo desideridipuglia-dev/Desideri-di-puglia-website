@@ -14,7 +14,8 @@ import { format, differenceInDays, addDays, isBefore, isSameDay } from 'date-fns
 import { it, enUS } from 'date-fns/locale';
 import { ArrowRight, Loader2, Wine, Grape, Anchor, ShoppingBasket, Sparkles, Coffee, Gift, Check } from 'lucide-react';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+// MODIFICA FONDAMENTALE: Indirizzo backend fisso
+const API = "https://desideri-backend.onrender.com/api";
 
 // Icon mapping for upsells
 const UPSELL_ICONS = {
@@ -65,6 +66,7 @@ const BookingPage = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        console.log(`Fetching data from: ${API}`);
         const [roomsRes, reasonsRes, upsellsRes] = await Promise.all([
           axios.get(`${API}/rooms`),
           axios.get(`${API}/stay-reasons`),
@@ -78,6 +80,7 @@ const BookingPage = () => {
         }
       } catch (error) {
         console.error('Error fetching initial data:', error);
+        toast.error("Errore di connessione al server");
       } finally {
         setLoading(false);
       }
@@ -233,6 +236,14 @@ const BookingPage = () => {
   };
 
   const locale = language === 'it' ? it : enUS;
+
+  if (loading) {
+      return (
+        <div className="min-h-screen pt-20 flex items-center justify-center bg-puglia-sand">
+          <div className="spinner" />
+        </div>
+      );
+  }
 
   return (
     <div data-testid="booking-page" className="min-h-screen bg-puglia-sand pt-20">

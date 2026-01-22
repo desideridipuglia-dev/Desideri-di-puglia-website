@@ -4,7 +4,8 @@ import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
 import RoomCard from '../components/RoomCard';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+// MODIFICA FONDAMENTALE: Indirizzo backend fisso per caricare la lista stanze
+const API = "https://desideri-backend.onrender.com/api";
 
 const RoomsPage = () => {
   const { t } = useLanguage();
@@ -14,6 +15,7 @@ const RoomsPage = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
+        console.log(`Fetching rooms from: ${API}/rooms`);
         const response = await axios.get(`${API}/rooms`);
         setRooms(response.data);
       } catch (error) {

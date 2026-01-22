@@ -6,7 +6,8 @@ import axios from 'axios';
 import { Button } from '../components/ui/button';
 import { CheckCircle, XCircle, Loader2, Home } from 'lucide-react';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+// MODIFICA FONDAMENTALE: Indirizzo backend fisso per verificare il pagamento
+const API = "https://desideri-backend.onrender.com/api";
 
 const BookingSuccessPage = () => {
   const { language, t } = useLanguage();
@@ -25,6 +26,7 @@ const BookingSuccessPage = () => {
       }
 
       try {
+        console.log(`Verifying payment at: ${API}/bookings/status/${sessionId}`);
         const response = await axios.get(`${API}/bookings/status/${sessionId}`);
         
         if (response.data.payment_status === 'paid') {
