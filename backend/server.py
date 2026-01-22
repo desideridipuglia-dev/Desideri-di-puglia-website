@@ -43,9 +43,9 @@ SMTP_USER = os.environ.get('SMTP_USER', 'desideridipuglia@gmail.com')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD') 
 SENDER_EMAIL = os.environ.get('MAIL_FROM', 'desideridipuglia@gmail.com')
 
-# ADMIN CREDENTIALS
-ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
-plain_password = os.environ.get('ADMIN_PASSWORD', 'admin') 
+# ADMIN CREDENTIALS (MODIFICA: CREDENZIALI FISSE PER ACCESSO SICURO)
+ADMIN_USERNAME = "admin"
+plain_password = "pippo" 
 ADMIN_PASSWORD_HASH = hashlib.sha256(plain_password.encode()).hexdigest()
 
 # ==================== APP SETUP ====================
@@ -341,7 +341,7 @@ async def send_contact_notification(contact: ContactMessage):
     """
     return await asyncio.to_thread(_send_email_sync, SENDER_EMAIL, subject, html)
 
-# ==================== INITIALIZATION FUNCTIONS (REINSERITE) ====================
+# ==================== INITIALIZATION FUNCTIONS ====================
 
 async def init_rooms():
     rooms_count = await db.rooms.count_documents({})
