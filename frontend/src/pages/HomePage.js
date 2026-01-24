@@ -10,7 +10,7 @@ import { Button } from '../components/ui/button';
 import { ArrowRight, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-// MODIFICA FONDAMENTALE: Indirizzo fisso per garantire la connessione
+// INDIRIZZO API
 const API = "https://desideri-backend.onrender.com/api";
 
 const HomePage = () => {
@@ -82,7 +82,6 @@ const HomePage = () => {
     const fetchData = async () => {
       try {
         console.log("Tentativo connessione a:", API);
-        // Chiamata parallela per stanze e recensioni
         const [roomsRes, reviewsRes] = await Promise.all([
           axios.get(`${API}/rooms`).catch(e => {
             console.error("Errore fetch rooms:", e);
@@ -96,7 +95,6 @@ const HomePage = () => {
 
         if (Array.isArray(roomsRes.data) && roomsRes.data.length > 0) {
             setRooms(roomsRes.data);
-            console.log("Stanze caricate dal DB:", roomsRes.data.length);
         }
         if (Array.isArray(reviewsRes.data) && reviewsRes.data.length > 0) {
             setReviews(reviewsRes.data);
@@ -115,18 +113,18 @@ const HomePage = () => {
     roomsRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Se il server ha restituito dati, usa quelli. Altrimenti usa i demo.
   const displayRooms = (rooms.length > 0) ? rooms : demoRooms;
   const displayReviews = (reviews.length > 0) ? reviews : demoReviews;
 
   return (
-    <div data-testid="home-page">
+    <div data-testid="home-page" className="bg-stone-50"> {/* Sfondo generale leggermente caldo */}
       <Hero onScrollToRooms={scrollToRooms} />
 
+      {/* --- SEZIONE STANZE --- */}
       <section 
         ref={roomsRef}
         data-testid="rooms-section" 
-        className="py-24 md:py-32 bg-puglia-sand"
+        className="py-24 md:py-32"
       >
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <motion.div
@@ -134,15 +132,22 @@ const HomePage = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-20"
           >
-            <p className="font-accent text-antique-gold text-sm tracking-[0.3em] uppercase mb-4">
+            <p className="font-accent text-antique-gold text-sm tracking-[0.4em] uppercase mb-4">
               {t('rooms.subtitle')}
             </p>
-            <h2 className="font-heading text-3xl md:text-5xl text-adriatic-blue">
+            {/* Titolo Ingrandito */}
+            <h2 className="font-heading text-4xl md:text-6xl text-adriatic-blue mb-6">
               {t('rooms.title')}
             </h2>
-            <div className="section-divider" />
+            
+            {/* NUOVO DIVISORE ELEGANTE */}
+            <div className="flex items-center justify-center gap-4 opacity-70">
+              <div className="h-[1px] w-12 bg-antique-gold"></div>
+              <Star className="w-4 h-4 text-antique-gold fill-antique-gold" />
+              <div className="h-[1px] w-12 bg-antique-gold"></div>
+            </div>
           </motion.div>
 
           {loading ? (
@@ -150,9 +155,14 @@ const HomePage = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-adriatic-blue" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               {displayRooms.map((room, index) => (
-                <RoomCard key={room.id} room={room} index={index} />
+                <RoomCard 
+                  key={room.id} 
+                  room={room} 
+                  index={index}
+                  isReversed={index % 2 !== 0} // Predisposizione per layout alternato
+                />
               ))}
             </div>
           )}
@@ -161,25 +171,31 @@ const HomePage = () => {
 
       <ServicesSection />
 
-      <section data-testid="reviews-preview-section" className="py-24 md:py-32 bg-puglia-sand">
+      {/* --- SEZIONE RECENSIONI --- */}
+      <section data-testid="reviews-preview-section" className="py-24 md:py-32 bg-puglia-sand/30">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-20"
           >
-            <p className="font-accent text-antique-gold text-sm tracking-[0.3em] uppercase mb-4">
+            <p className="font-accent text-antique-gold text-sm tracking-[0.4em] uppercase mb-4">
               {t('reviews.subtitle')}
             </p>
-            <h2 className="font-heading text-3xl md:text-5xl text-adriatic-blue">
+            <h2 className="font-heading text-4xl md:text-6xl text-adriatic-blue mb-6">
               {t('reviews.title')}
             </h2>
-            <div className="section-divider" />
+             {/* NUOVO DIVISORE ELEGANTE */}
+             <div className="flex items-center justify-center gap-4 opacity-70">
+              <div className="h-[1px] w-12 bg-antique-gold"></div>
+              <Star className="w-4 h-4 text-antique-gold fill-antique-gold" />
+              <div className="h-[1px] w-12 bg-antique-gold"></div>
+            </div>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             {displayReviews.slice(0, 3).map((review, index) => (
               <ReviewCard key={review.id} review={review} index={index} />
             ))}
@@ -189,7 +205,7 @@ const HomePage = () => {
             <Link to="/reviews">
               <Button 
                 variant="outline" 
-                className="border-adriatic-blue text-adriatic-blue hover:bg-adriatic-blue hover:text-white px-8 py-3"
+                className="border-adriatic-blue text-adriatic-blue hover:bg-adriatic-blue hover:text-white px-10 py-6 text-sm uppercase tracking-widest transition-all duration-300"
                 data-testid="view-all-reviews"
               >
                 {t('reviews.title')}
@@ -200,34 +216,41 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="relative py-24 md:py-32 overflow-hidden">
+      {/* --- SEZIONE CTA FINALE (PARALLAX + GLASSMORPHISM) --- */}
+      <section className="relative py-32 overflow-hidden flex items-center justify-center min-h-[60vh]">
+        
+        {/* Immagine di Sfondo con PARALLAX (bg-fixed) */}
         <div 
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-cover bg-center bg-fixed"
           style={{ 
             backgroundImage: `url(https://images.unsplash.com/photo-1652376172934-95d8d0a8ec47?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTF8MHwxfHNlYXJjaHwxfHxiYXJsZXR0YSUyMGNhc3RsZSUyMGZvcnRyZXNzJTIwc3RvbmUlMjB0ZXh0dXJlfGVufDB8fHx8MTc2ODg4NTYyOXww&ixlib=rb-4.1.0&q=85)` 
           }}
         />
-        <div className="absolute inset-0 bg-adriatic-blue/80" />
         
-        <div className="relative z-10 max-w-4xl mx-auto px-6 md:px-12 text-center">
+        {/* Overlay Scuro Leggero */}
+        <div className="absolute inset-0 bg-black/30" />
+        
+        {/* Contenitore GLASSMORPHISM */}
+        <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            className="backdrop-blur-md bg-white/10 border border-white/20 p-8 md:p-14 rounded-2xl shadow-2xl"
           >
-            <p className="font-accent text-antique-gold text-sm tracking-[0.3em] uppercase mb-4">
+            <p className="font-accent text-white/90 text-sm tracking-[0.4em] uppercase mb-4">
               Desideri di Puglia
             </p>
-            <h2 className="font-heading text-3xl md:text-5xl text-white mb-6">
+            <h2 className="font-heading text-4xl md:text-6xl text-white mb-8 drop-shadow-md">
               {t('booking.title')}
             </h2>
-            <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
+            <p className="text-white/90 text-lg mb-10 max-w-xl mx-auto font-light leading-relaxed">
               {t('booking.subtitle')}
             </p>
+            
             <Link to="/booking">
               <Button 
-                className="bg-antique-gold text-adriatic-blue hover:bg-white px-10 py-6 text-sm uppercase tracking-widest"
+                className="bg-white text-adriatic-blue hover:bg-antique-gold hover:text-white px-12 py-7 text-sm uppercase tracking-widest transition-all duration-500 ease-out shadow-lg hover:shadow-gold/50"
                 data-testid="cta-book-now"
               >
                 {t('nav.book')}
