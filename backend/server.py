@@ -19,7 +19,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import requests
-from ics import Calendar, Event  # AGGIUNTO PER ICAL
+from ics import Calendar, Event
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -39,7 +39,6 @@ stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
 
 # EMAIL CONFIGURATION (GMAIL SMTP)
-# Usa le variabili EMAIL_USER e EMAIL_PASS che abbiamo settato su Render
 SMTP_HOST = 'smtp.gmail.com'
 SMTP_PORT = 587
 SMTP_USER = os.environ.get('EMAIL_USER') 
@@ -85,7 +84,6 @@ class Room(BaseModel):
     max_guests: int = 3
     images: List[RoomImage] = []
     amenities: List[str] = []
-    # AGGIUNTO IL CAMPO PER IL CALENDARIO
     ical_import_url: Optional[str] = "" 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -306,7 +304,6 @@ async def send_contact_notification(contact: ContactMessage):
     return await asyncio.to_thread(_send_email_sync, SMTP_USER, subject, html)
 
 # ==================== ICAL CALENDAR LOGIC (SYNC) ====================
-# QUESTE SONO LE NUOVE FUNZIONI PER BOOKING
 
 @api_router.get("/ical/sync")
 async def sync_calendars():
@@ -369,7 +366,7 @@ async def export_calendar(room_id: str):
     from fastapi.responses import Response
     return Response(content=str(c), media_type="text/calendar")
 
-# ==================== ENDPOINTS (IL RESTO DEL TUO CODICE) ====================
+# ==================== ENDPOINTS BASE ====================
 
 @api_router.get("/")
 async def root():
@@ -485,23 +482,27 @@ async def delete_upsell(upsell_id: str):
     await db.upsells.delete_one({"id": upsell_id})
     return {"message": "Upsell deleted"}
 
-# --- BLOCKED DATES ---
+# --- BLOCKED DATES (FIXED FOR SINGLE DATE & ROBUSTNESS) ---
 @api_router.get("/blocked-dates/{room_id}")
 async def get_blocked_dates(room_id: str):
     return await db.blocked_dates.find({"room_id": room_id}, {"_id": 0}).to_list(1000)
 
 @api_router.post("/blocked-dates/range")
 async def block_date_range(room_id: str, start_date: str, end_date: str, reason: Optional[str] = None):
-    # Qui uso una logica semplificata per non complicare i modelli mancanti
-    current = datetime.strptime(start_date, "%Y-%m-%d")
-    end = datetime.strptime(end_date, "%Y-%m-%d")
+    try:
+        current = datetime.strptime(start_date, "%Y-%m-%d")
+        end = datetime.strptime(end_date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(400, "Formato data non valido (YYYY-MM-DD)")
+        
     blocked_count = 0
+    # Questo ciclo funziona anche se start == end (fa 1 iterazione)
     while current <= end:
         date_str = current.strftime("%Y-%m-%d")
         existing = await db.blocked_dates.find_one({"room_id": room_id, "date": date_str})
         if not existing:
-            # Creazione manuale per evitare errori di importazione modello BlockedDate
             await db.blocked_dates.insert_one({
+                "id": str(uuid.uuid4()),
                 "room_id": room_id,
                 "date": date_str,
                 "reason": reason,
@@ -509,7 +510,8 @@ async def block_date_range(room_id: str, start_date: str, end_date: str, reason:
             })
             blocked_count += 1
         current += timedelta(days=1)
-    return {"message": f"{blocked_count} dates blocked"}
+        
+    return {"message": f"{blocked_count} date bloccate."}
 
 @api_router.delete("/blocked-dates/{room_id}/{date}")
 async def remove_blocked_date(room_id: str, date: str):
@@ -697,7 +699,7 @@ async def update_booking_status(booking_id: str, status: str):
 @api_router.post("/reviews")
 async def create_review(data: ReviewCreate):
     booking = await db.bookings.find_one({"id": data.booking_id})
-    if not booking or booking["status"] != "confirmed": # Corretto da completed a confirmed
+    if not booking or booking["status"] != "confirmed":
         raise HTTPException(400, "Booking not confirmed")
     review = Review(
         booking_id=data.booking_id,
@@ -737,24 +739,101 @@ async def submit_contact(contact: ContactMessage):
 async def get_messages():
     return await db.contact_messages.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
 
-# --- ANALYTICS ---
+# --- ANALYTICS (FIXED FOR REAL DATA) ---
 @api_router.get("/analytics/top-stats")
 async def get_top_stats():
     today = datetime.now().strftime("%Y-%m-%d")
-    checkins = await db.bookings.count_documents({"check_in": today, "status": "confirmed"})
+    
+    checkins = await db.bookings.count_documents({
+        "check_in": today, 
+        "status": "confirmed"
+    })
+    
     pending = await db.bookings.count_documents({"status": "pending"})
-    return {"todays_checkins": checkins, "pending_bookings": pending, "todays_checkouts": 0, "month_revenue": 0}
+    
+    checkouts = await db.bookings.count_documents({
+        "check_out": today,
+        "status": "confirmed"
+    })
+    
+    # Calcolo fatturato del mese
+    first_day = date.today().replace(day=1).strftime("%Y-%m-%d")
+    bookings_month = await db.bookings.find({
+        "created_at": {"$gte": first_day},
+        "status": "confirmed"
+    }).to_list(1000)
+    
+    month_revenue = sum(b.get('total_price', 0) for b in bookings_month)
+    
+    return {
+        "todays_checkins": checkins, 
+        "pending_bookings": pending, 
+        "todays_checkouts": checkouts, 
+        "month_revenue": month_revenue
+    }
 
 @api_router.get("/analytics/overview")
 async def get_analytics_overview(start_date: str = None, end_date: str = None):
+    # Logica per i grafici
+    query = {"status": "confirmed"}
+    if start_date and end_date:
+        query["check_in"] = {"$gte": start_date}
+
+    bookings = await db.bookings.find(query).to_list(2000)
+    
+    total_revenue = 0.0
+    total_bookings = len(bookings)
+    nights_sold = 0
+    revenue_nonna = 0.0
+    bookings_nonna = 0
+    revenue_pozzo = 0.0
+    bookings_pozzo = 0
+    
+    for b in bookings:
+        price = b.get('total_price', 0)
+        total_revenue += price
+        
+        try:
+            d1 = datetime.strptime(b['check_in'], "%Y-%m-%d")
+            d2 = datetime.strptime(b['check_out'], "%Y-%m-%d")
+            nights_sold += (d2 - d1).days
+        except:
+            pass
+            
+        if b.get('room_id') == 'nonna':
+            revenue_nonna += price
+            bookings_nonna += 1
+        elif b.get('room_id') == 'pozzo':
+            revenue_pozzo += price
+            bookings_pozzo += 1
+
+    # Calcolo Occupancy (approssimato)
+    occupancy_rate = 0
+    if total_bookings > 0:
+        occupancy_rate = round((nights_sold / (365 * 2)) * 100, 1)
+
     return {
-        "summary": {"total_revenue": 0, "total_bookings": 0, "occupancy_rate": 0, "avg_price_per_night": 0, "total_discounts": 0, "total_nights": 0, "conversion_rate": 0, "avg_guests": 0, "coupon_usage_rate": 0},
-        "by_room": {"bookings": {"nonna": 0, "pozzo": 0}, "revenue": {"nonna": 0, "pozzo": 0}},
-        "by_status": {"pending": 0, "confirmed": 0, "cancelled": 0}
+        "summary": {
+            "total_revenue": total_revenue,
+            "total_bookings": total_bookings,
+            "occupancy_rate": occupancy_rate,
+            "avg_price_per_night": round(total_revenue / nights_sold, 2) if nights_sold > 0 else 0,
+            "total_nights": nights_sold
+        },
+        "by_room": {
+            "bookings": {"nonna": bookings_nonna, "pozzo": bookings_pozzo},
+            "revenue": {"nonna": revenue_nonna, "pozzo": revenue_pozzo}
+        },
+        "by_status": {
+            "pending": await db.bookings.count_documents({"status": "pending"}),
+            "confirmed": total_bookings,
+            "cancelled": await db.bookings.count_documents({"status": "cancelled"})
+        }
     }
 
 @api_router.get("/analytics/monthly")
 async def get_monthly(year: int = 2025):
+    # Placeholder per grafico mensile (si può espandere in futuro)
     return {"months": []}
 
 @api_router.get("/analytics/recent-bookings")
@@ -812,5 +891,3 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Rimosso init automatico per evitare conflitti, il DB è già popolato
