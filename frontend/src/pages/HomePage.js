@@ -13,6 +13,22 @@ import { Link } from 'react-router-dom';
 // INDIRIZZO API
 const API = "https://desideri-backend.onrender.com/api";
 
+// --- FUNZIONE MAGICA PER OTTIMIZZARE QUALSIASI LINK (Booking, Airbnb, ecc) ---
+const getOptimizedUrl = (url) => {
+  if (!url) return "";
+  
+  // 1. Se è UNSPLASH, usiamo i suoi parametri nativi (è il metodo più pulito)
+  if (url.includes("images.unsplash.com")) {
+     const baseUrl = url.split('?')[0];
+     return `${baseUrl}?q=80&w=1200&auto=format&fit=crop`;
+  }
+
+  // 2. PER TUTTI GLI ALTRI (Booking, Airbnb, link diretti, ecc.)
+  // Usiamo wsrv.nl: un servizio gratuito che ridimensiona e converte in WebP al volo.
+  // "encodeURIComponent" serve perché i link di Booking sono pieni di simboli strani.
+  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=1200&q=80&output=webp`;
+};
+
 const HomePage = () => {
   const { t } = useLanguage();
   const [rooms, setRooms] = useState([]);
@@ -20,7 +36,7 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const roomsRef = useRef(null);
 
-  // --- DATI DEMO PER LE STANZE (Fallback di sicurezza) ---
+  // --- DATI DEMO (Se il database è vuoto) ---
   const demoRooms = [
     {
       id: 1,
@@ -28,7 +44,7 @@ const HomePage = () => {
       description_it: "Un tuffo nel passato con comfort moderni e vista sul centro storico.",
       description_en: "A blast from the past with modern comforts and a view of the historic center.",
       price: 120,
-      images: ["https://images.unsplash.com/photo-1590490360182-f33efe29a79d?q=80&w=2070&auto=format&fit=crop"],
+      images: ["https://images.unsplash.com/photo-1590490360182-f33efe29a79d"],
       max_guests: 2
     },
     {
@@ -37,7 +53,7 @@ const HomePage = () => {
       description_it: "Atmosfera magica in pietra viva, perfetta per fughe romantiche.",
       description_en: "Magical atmosphere in exposed stone, perfect for romantic getaways.",
       price: 140,
-      images: ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2070&auto=format&fit=crop"],
+      images: ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2"],
       max_guests: 2
     },
     {
@@ -46,7 +62,7 @@ const HomePage = () => {
       description_it: "Ampia suite luminosa con terrazza privata esclusiva.",
       description_en: "Large bright suite with exclusive private terrace.",
       price: 180,
-      images: ["https://images.unsplash.com/photo-1566665797739-1674de7a421a?q=80&w=2074&auto=format&fit=crop"],
+      images: ["https://images.unsplash.com/photo-1566665797739-1674de7a421a"],
       max_guests: 3
     }
   ];
@@ -117,7 +133,7 @@ const HomePage = () => {
   const displayReviews = (reviews.length > 0) ? reviews : demoReviews;
 
   return (
-    <div data-testid="home-page" className="bg-stone-50"> {/* Sfondo generale leggermente caldo */}
+    <div data-testid="home-page" className="bg-stone-50"> 
       <Hero onScrollToRooms={scrollToRooms} />
 
       {/* --- SEZIONE STANZE --- */}
@@ -137,12 +153,10 @@ const HomePage = () => {
             <p className="font-accent text-antique-gold text-sm tracking-[0.4em] uppercase mb-4">
               {t('rooms.subtitle')}
             </p>
-            {/* Titolo Ingrandito */}
             <h2 className="font-heading text-4xl md:text-6xl text-adriatic-blue mb-6">
               {t('rooms.title')}
             </h2>
             
-            {/* NUOVO DIVISORE ELEGANTE */}
             <div className="flex items-center justify-center gap-4 opacity-70">
               <div className="h-[1px] w-12 bg-antique-gold"></div>
               <Star className="w-4 h-4 text-antique-gold fill-antique-gold" />
@@ -156,14 +170,29 @@ const HomePage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {displayRooms.map((room, index) => (
-                <RoomCard 
-                  key={room.id} 
-                  room={room} 
-                  index={index}
-                  isReversed={index % 2 !== 0} // Predisposizione per layout alternato
-                />
-              ))}
+              {displayRooms.map((room, index) => {
+                // --- QUI AVVIENE LA MAGIA ---
+                // Creiamo una versione "leggera" della stanza solo per la visualizzazione
+                const optimizedRoom = {
+                  ...room,
+                  images: room.images.map(img => {
+                    const url = typeof img === 'string' ? img : img.url;
+                    const optimizedUrl = getOptimizedUrl(url); // Applichiamo il filtro
+                    
+                    // Restituiamo il formato corretto (stringa o oggetto)
+                    return typeof img === 'string' ? optimizedUrl : { ...img, url: optimizedUrl };
+                  })
+                };
+
+                return (
+                  <RoomCard 
+                    key={room.id} 
+                    room={optimizedRoom} 
+                    index={index}
+                    isReversed={index % 2 !== 0} 
+                  />
+                );
+              })}
             </div>
           )}
         </div>
@@ -187,7 +216,6 @@ const HomePage = () => {
             <h2 className="font-heading text-4xl md:text-6xl text-adriatic-blue mb-6">
               {t('reviews.title')}
             </h2>
-             {/* NUOVO DIVISORE ELEGANTE */}
              <div className="flex items-center justify-center gap-4 opacity-70">
               <div className="h-[1px] w-12 bg-antique-gold"></div>
               <Star className="w-4 h-4 text-antique-gold fill-antique-gold" />
@@ -216,21 +244,19 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* --- SEZIONE CTA FINALE (PARALLAX + GLASSMORPHISM) --- */}
+      {/* --- SEZIONE CTA FINALE --- */}
       <section className="relative py-32 overflow-hidden flex items-center justify-center min-h-[60vh]">
         
-        {/* Immagine di Sfondo con PARALLAX (bg-fixed) */}
+        {/* Anche lo sfondo viene ottimizzato ora */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-fixed"
           style={{ 
-            backgroundImage: `url(https://images.unsplash.com/photo-1652376172934-95d8d0a8ec47?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTF8MHwxfHNlYXJjaHwxfHxiYXJsZXR0YSUyMGNhc3RsZSUyMGZvcnRyZXNzJTIwc3RvbmUlMjB0ZXh0dXJlfGVufDB8fHx8MTc2ODg4NTYyOXww&ixlib=rb-4.1.0&q=85)` 
+            backgroundImage: `url(${getOptimizedUrl("https://images.unsplash.com/photo-1652376172934-95d8d0a8ec47")})` 
           }}
         />
         
-        {/* Overlay Scuro Leggero */}
         <div className="absolute inset-0 bg-black/30" />
         
-        {/* Contenitore GLASSMORPHISM */}
         <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
