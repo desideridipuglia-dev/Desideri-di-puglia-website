@@ -103,7 +103,7 @@ class Booking(BaseModel):
     room_id: str
     guest_email: str
     guest_name: str
-    guest_phone: Optional[str] = None
+    guest_phone: Optional[str] = None # Opzionale nel DB per supportare import iCal
     check_in: str
     check_out: str
     num_guests: int
@@ -126,7 +126,7 @@ class BookingCreate(BaseModel):
     room_id: str
     guest_email: EmailStr
     guest_name: str
-    guest_phone: Optional[str] = None
+    guest_phone: str # OBBLIGATORIO: Richiesto dal frontend
     check_in: str
     check_out: str
     num_guests: int
@@ -371,6 +371,11 @@ async def export_calendar(room_id: str):
 @api_router.get("/")
 async def root():
     return {"message": "Desideri di Puglia API", "version": "1.0.0"}
+
+# --- HEALTH CHECK (AGGIUNTO PER MONITORAGGIO) ---
+@api_router.get("/health")
+async def health_check():
+    return {"status": "ok", "message": "Server is running"}
 
 @api_router.get("/rooms")
 async def get_rooms():
@@ -703,7 +708,7 @@ async def update_booking_status(booking_id: str, status: str):
 @api_router.post("/reviews")
 async def create_review(data: ReviewCreate):
     booking = await db.bookings.find_one({"id": data.booking_id})
-    if not booking or booking["status"] != "confirmed": # Corretto da completed a confirmed
+    if not booking or booking["status"] != "confirmed":
         raise HTTPException(400, "Booking not confirmed")
     review = Review(
         booking_id=data.booking_id,
