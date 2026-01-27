@@ -38,8 +38,9 @@ db = client[os.environ.get('DB_NAME', 'desideri_db')]
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
 
-# EMAIL CONFIGURATION (SMTP UNIVERSALE)
-SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+# --- EMAIL CONFIGURATION (CONFIGURATO PER OUTLOOK) ---
+# Se non trovi le variabili, usa i parametri di Outlook di default
+SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.office365.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
 SMTP_USER = os.environ.get('EMAIL_USER') 
 SMTP_PASSWORD = os.environ.get('EMAIL_PASS')
@@ -258,9 +259,9 @@ class SiteImagesUpdate(BaseModel):
 # ==================== EMAIL LOGIC ====================
 
 def _send_email_sync(to_email: str, subject: str, html_content: str):
-    """Sync function to send email via SMTP"""
+    """Sync function to send email via SMTP (Outlook/Gmail)"""
     if not SMTP_USER or not SMTP_PASSWORD:
-        logger.error("Credenziali email mancanti")
+        logger.error("Credenziali email mancanti - Controlla Environment Variables su Render")
         return False
     try:
         msg = MIMEMultipart()
@@ -269,18 +270,20 @@ def _send_email_sync(to_email: str, subject: str, html_content: str):
         msg['Subject'] = subject
         msg.attach(MIMEText(html_content, 'html'))
 
+        # Connessione al server (default Outlook: smtp.office365.com)
+        logger.info(f"Connecting to SMTP: {SMTP_HOST}:{SMTP_PORT}")
         server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
         server.starttls()
         server.login(SMTP_USER, SMTP_PASSWORD)
         server.send_message(msg)
         server.quit()
-        logger.info(f"EMAIL SENT to {to_email}")
+        logger.info(f"EMAIL SENT SUCCESSFULLY to {to_email}")
         return True
     except Exception as e:
         logger.error(f"EMAIL ERROR to {to_email}: {str(e)}")
         return False
 
-# Modificata per essere chiamata in background (non aspetta)
+# Funzione chiamata in background
 def send_booking_confirmation_task(booking: dict, room_name: str):
     subject = "Conferma Prenotazione - Desideri di Puglia"
     html = f"""
@@ -288,11 +291,20 @@ def send_booking_confirmation_task(booking: dict, room_name: str):
     <p>La tua prenotazione per <strong>{room_name}</strong> è confermata.</p>
     <p><strong>Check-in:</strong> {booking['check_in']}</p>
     <p><strong>Check-out:</strong> {booking['check_out']}</p>
+    <p><strong>Ospiti:</strong> {booking['num_guests']}</p>
     <p><strong>Prezzo Totale:</strong> €{booking['total_price']}</p>
     <br>
     <p>A presto,<br>Desideri di Puglia</p>
+    <hr>
+    <small>Questa è una mail automatica.</small>
     """
+    # Invia al cliente
     _send_email_sync(booking["guest_email"], subject, html)
+    
+    # Invia notifica all'admin (te stesso)
+    admin_subject = f"Nuova prenotazione: {booking['guest_name']}"
+    admin_html = f"<p>Nuova prenotazione ricevuta per {room_name}.</p><p>Totale: €{booking['total_price']}</p>"
+    _send_email_sync(SMTP_USER, admin_subject, admin_html)
 
 async def send_contact_notification(contact: ContactMessage):
     subject = f"Nuovo messaggio da {contact.name}"
@@ -711,7 +723,7 @@ async def update_booking_status(booking_id: str, status: str):
 @api_router.post("/reviews")
 async def create_review(data: ReviewCreate):
     booking = await db.bookings.find_one({"id": data.booking_id})
-    if not booking or booking["status"] != "confirmed":
+    if not booking or booking["status"] != "confirmed": # Corretto da completed a confirmed
         raise HTTPException(400, "Booking not confirmed")
     review = Review(
         booking_id=data.booking_id,
