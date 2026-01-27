@@ -8,7 +8,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Calendar } from '../components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { format, addDays } from 'date-fns';
+import { format, addDays, parseISO } from 'date-fns'; // Aggiunto parseISO
 import { it } from 'date-fns/locale';
 import { 
   Bed, Calendar as CalendarIcon, MessageSquare, 
@@ -17,7 +17,7 @@ import {
   ArrowUp, ArrowDown, Home, Coffee, Gift, DollarSign
 } from 'lucide-react';
 
-// MODIFICA FONDAMENTALE: Indirizzo backend fisso per far funzionare il login
+// Indirizzo backend
 const API = "https://desideri-backend.onrender.com/api";
 
 // Login Component
@@ -115,7 +115,6 @@ const AdminPage = () => {
     slug: '', title_it: '', title_en: '', description_it: '', description_en: '',
     price: '', min_nights: 0, icon: 'gift'
   });
-  const [editingUpsell, setEditingUpsell] = useState(null);
   
   // Custom prices state
   const [customPrices, setCustomPrices] = useState({});
@@ -290,14 +289,18 @@ const AdminPage = () => {
     } catch { toast.error('Errore nell\'invio'); }
   };
 
+  // *** MODIFICA PER GESTIRE DATA SINGOLA E COLORI ***
   const handleBlockDates = async () => {
-    if (!dateRange.from || !dateRange.to) {
-      toast.error('Seleziona un intervallo di date');
+    // Verifica solo se c'è almeno la data di inizio
+    if (!dateRange?.from) {
+      toast.error('Seleziona almeno una data');
       return;
     }
     try {
       const startDate = format(dateRange.from, 'yyyy-MM-dd');
-      const endDate = format(dateRange.to, 'yyyy-MM-dd');
+      // Se non c'è "to", usa "from" come fine (1 giorno solo)
+      const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : startDate;
+      
       await axios.post(`${API}/blocked-dates/range?room_id=${selectedRoom}&start_date=${startDate}&end_date=${endDate}&reason=${encodeURIComponent(blockReason || 'Bloccato')}`);
       toast.success('Date bloccate');
       setDateRange({ from: undefined, to: undefined });
@@ -439,6 +442,12 @@ const AdminPage = () => {
       toast.success('Prezzo rimosso');
       fetchData();
     } catch { toast.error('Errore'); }
+  };
+
+  // Helper per ottenere le date bloccate in formato Date object per il calendario
+  const getBlockedDatesForCalendar = () => {
+    const roomDates = blockedDates[selectedRoom] || [];
+    return roomDates.map(d => parseISO(d.date));
   };
 
   const tabs = [
@@ -842,8 +851,25 @@ const AdminPage = () => {
                       </div>
                       <div className="mb-4">
                         <Label>Seleziona date</Label>
-                        <div className="mt-2 flex justify-center">
-                          <Calendar mode="range" selected={dateRange} onSelect={setDateRange} locale={it} numberOfMonths={1} className="border border-puglia-stone" />
+                        <div className="mt-2 flex justify-center bg-white rounded-md p-2">
+                          <Calendar 
+                            mode="range" 
+                            selected={dateRange} 
+                            onSelect={setDateRange} 
+                            locale={it} 
+                            numberOfMonths={1} 
+                            className="border border-puglia-stone rounded-md"
+                            modifiers={{
+                              booked: getBlockedDatesForCalendar()
+                            }}
+                            modifiersStyles={{
+                              booked: { 
+                                color: '#991b1b', // Rosso scuro testo
+                                backgroundColor: '#fee2e2', // Rosso chiaro sfondo
+                                textDecoration: 'line-through'
+                              }
+                            }}
+                          />
                         </div>
                       </div>
                       <div className="mb-4">
@@ -862,7 +888,7 @@ const AdminPage = () => {
                           {blockedDates[roomId]?.length > 0 ? (
                             <div className="space-y-2 max-h-48 overflow-y-auto">
                               {blockedDates[roomId].map((blocked) => (
-                                <div key={blocked.date} className="flex items-center justify-between p-2 bg-red-50 text-sm">
+                                <div key={blocked.date} className="flex items-center justify-between p-2 bg-red-50 text-sm border-l-4 border-red-500">
                                   <div>
                                     <span className="font-medium">{blocked.date}</span>
                                     {blocked.reason && <span className="text-muted-foreground ml-2">- {blocked.reason}</span>}

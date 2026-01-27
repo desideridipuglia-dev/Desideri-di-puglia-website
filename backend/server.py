@@ -488,7 +488,11 @@ async def get_blocked_dates(room_id: str):
     return await db.blocked_dates.find({"room_id": room_id}, {"_id": 0}).to_list(1000)
 
 @api_router.post("/blocked-dates/range")
-async def block_date_range(room_id: str, start_date: str, end_date: str, reason: Optional[str] = None):
+async def block_date_range(room_id: str, start_date: str, end_date: Optional[str] = None, reason: Optional[str] = None):
+    # Fix: se end_date non c'è, usa start_date (blocca 1 solo giorno)
+    if not end_date:
+        end_date = start_date
+
     try:
         current = datetime.strptime(start_date, "%Y-%m-%d")
         end = datetime.strptime(end_date, "%Y-%m-%d")
@@ -699,7 +703,7 @@ async def update_booking_status(booking_id: str, status: str):
 @api_router.post("/reviews")
 async def create_review(data: ReviewCreate):
     booking = await db.bookings.find_one({"id": data.booking_id})
-    if not booking or booking["status"] != "confirmed":
+    if not booking or booking["status"] != "confirmed": # Corretto da completed a confirmed
         raise HTTPException(400, "Booking not confirmed")
     review = Review(
         booking_id=data.booking_id,
