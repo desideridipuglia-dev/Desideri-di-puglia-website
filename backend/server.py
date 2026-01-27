@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, Query, BackgroundTasks
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -39,7 +39,6 @@ stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
 
 # EMAIL CONFIGURATION (SMTP UNIVERSALE)
-# Supporta Gmail, Outlook, ecc. leggendo da variabili d'ambiente
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
 SMTP_USER = os.environ.get('EMAIL_USER') 
@@ -281,18 +280,19 @@ def _send_email_sync(to_email: str, subject: str, html_content: str):
         logger.error(f"EMAIL ERROR to {to_email}: {str(e)}")
         return False
 
-async def send_booking_confirmation_email(booking: dict, room: dict):
+# Modificata per essere chiamata in background (non aspetta)
+def send_booking_confirmation_task(booking: dict, room_name: str):
     subject = "Conferma Prenotazione - Desideri di Puglia"
     html = f"""
     <h1>Grazie {booking['guest_name']}!</h1>
-    <p>La tua prenotazione per <strong>{room['name_it']}</strong> è confermata.</p>
+    <p>La tua prenotazione per <strong>{room_name}</strong> è confermata.</p>
     <p><strong>Check-in:</strong> {booking['check_in']}</p>
     <p><strong>Check-out:</strong> {booking['check_out']}</p>
     <p><strong>Prezzo Totale:</strong> €{booking['total_price']}</p>
     <br>
     <p>A presto,<br>Desideri di Puglia</p>
     """
-    return await asyncio.to_thread(_send_email_sync, booking["guest_email"], subject, html)
+    _send_email_sync(booking["guest_email"], subject, html)
 
 async def send_contact_notification(contact: ContactMessage):
     subject = f"Nuovo messaggio da {contact.name}"
@@ -676,8 +676,9 @@ async def create_booking(booking_data: BookingCreate):
         "total_price": total_price
     }
 
+# --- MODIFICA CRUCIALE: BackgroundTasks ---
 @api_router.get("/bookings/status/{session_id}")
-async def check_booking_status(session_id: str):
+async def check_booking_status(session_id: str, background_tasks: BackgroundTasks):
     session = stripe.checkout.Session.retrieve(session_id)
     booking = await db.bookings.find_one({"stripe_session_id": session_id}, {"_id": 0})
     if not booking: raise HTTPException(404, "Not found")
@@ -688,7 +689,8 @@ async def check_booking_status(session_id: str):
         await db.bookings.update_one({"stripe_session_id": session_id}, {"$set": {"status": "confirmed", "payment_status": "paid"}})
         if prev_status != "paid":
             room = await db.rooms.find_one({"id": booking["room_id"]}, {"_id": 0})
-            await send_booking_confirmation_email(booking, room)
+            # L'email viene inviata in background, non blocca la risposta!
+            background_tasks.add_task(send_booking_confirmation_task, booking, room['name_it'])
             
     elif session.status == "expired":
         await db.bookings.update_one({"stripe_session_id": session_id}, {"$set": {"status": "cancelled", "payment_status": "expired"}})
@@ -709,7 +711,7 @@ async def update_booking_status(booking_id: str, status: str):
 @api_router.post("/reviews")
 async def create_review(data: ReviewCreate):
     booking = await db.bookings.find_one({"id": data.booking_id})
-    if not booking or booking["status"] != "confirmed": # Corretto da completed a confirmed
+    if not booking or booking["status"] != "confirmed":
         raise HTTPException(400, "Booking not confirmed")
     review = Review(
         booking_id=data.booking_id,
