@@ -5,7 +5,8 @@ import axios from 'axios';
 import Hero from '../components/Hero';
 import RoomCard from '../components/RoomCard';
 import ServicesSection from '../components/ServicesSection';
-import ReviewCard from '../components/ReviewCard';
+// ReviewCard non serve più qui visualmente, ma lascio l'import se serve altrove
+import ReviewCard from '../components/ReviewCard'; 
 import { Button } from '../components/ui/button';
 import { ArrowRight, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -17,15 +18,13 @@ const API = "https://desideri-backend.onrender.com/api";
 const getOptimizedUrl = (url) => {
   if (!url) return "";
   
-  // 1. Se è UNSPLASH, usiamo i suoi parametri nativi (è il metodo più pulito)
+  // 1. Se è UNSPLASH, usiamo i suoi parametri nativi
   if (url.includes("images.unsplash.com")) {
      const baseUrl = url.split('?')[0];
      return `${baseUrl}?q=80&w=1200&auto=format&fit=crop`;
   }
 
   // 2. PER TUTTI GLI ALTRI (Booking, Airbnb, link diretti, ecc.)
-  // Usiamo wsrv.nl: un servizio gratuito che ridimensiona e converte in WebP al volo.
-  // "encodeURIComponent" serve perché i link di Booking sono pieni di simboli strani.
   return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=1200&q=80&output=webp`;
 };
 
@@ -35,6 +34,18 @@ const HomePage = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const roomsRef = useRef(null);
+
+  // --- CARICAMENTO SCRIPT ELFSIGHT ---
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = "https://elfsightcdn.com/platform.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   // --- DATI DEMO (Se il database è vuoto) ---
   const demoRooms = [
@@ -130,7 +141,7 @@ const HomePage = () => {
   };
 
   const displayRooms = (rooms.length > 0) ? rooms : demoRooms;
-  const displayReviews = (reviews.length > 0) ? reviews : demoReviews;
+  // Non usiamo più displayReviews per il render, ma lo teniamo per logica se serve
 
   return (
     <div data-testid="home-page" className="bg-stone-50"> 
@@ -172,14 +183,11 @@ const HomePage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               {displayRooms.map((room, index) => {
                 // --- QUI AVVIENE LA MAGIA ---
-                // Creiamo una versione "leggera" della stanza solo per la visualizzazione
                 const optimizedRoom = {
                   ...room,
                   images: room.images.map(img => {
                     const url = typeof img === 'string' ? img : img.url;
-                    const optimizedUrl = getOptimizedUrl(url); // Applichiamo il filtro
-                    
-                    // Restituiamo il formato corretto (stringa o oggetto)
+                    const optimizedUrl = getOptimizedUrl(url); 
                     return typeof img === 'string' ? optimizedUrl : { ...img, url: optimizedUrl };
                   })
                 };
@@ -200,7 +208,7 @@ const HomePage = () => {
 
       <ServicesSection />
 
-      {/* --- SEZIONE RECENSIONI --- */}
+      {/* --- SEZIONE RECENSIONI (MODIFICATA CON WIDGET) --- */}
       <section data-testid="reviews-preview-section" className="py-24 md:py-32 bg-puglia-sand/30">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <motion.div
@@ -208,7 +216,7 @@ const HomePage = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="text-center mb-20"
+            className="text-center mb-12"
           >
             <p className="font-accent text-antique-gold text-sm tracking-[0.4em] uppercase mb-4">
               {t('reviews.subtitle')}
@@ -223,10 +231,9 @@ const HomePage = () => {
             </div>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            {displayReviews.slice(0, 3).map((review, index) => (
-              <ReviewCard key={review.id} review={review} index={index} />
-            ))}
+          {/* WIDGET ELFSIGHT */}
+          <div className="mb-16 min-h-[300px]">
+            <div className="elfsight-app-d0abb6f5-7062-4910-b3ca-52e57d6f45e3" data-elfsight-app-lazy></div>
           </div>
 
           <div className="text-center">
@@ -247,7 +254,6 @@ const HomePage = () => {
       {/* --- SEZIONE CTA FINALE --- */}
       <section className="relative py-32 overflow-hidden flex items-center justify-center min-h-[60vh]">
         
-        {/* Anche lo sfondo viene ottimizzato ora */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-fixed"
           style={{ 
