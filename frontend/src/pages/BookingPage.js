@@ -12,9 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { format, differenceInDays, addDays, isBefore, isSameDay } from 'date-fns';
 import { it, enUS } from 'date-fns/locale';
-import { ArrowRight, Loader2, Wine, Grape, Anchor, ShoppingBasket, Sparkles, Coffee, Gift, Check } from 'lucide-react';
+import { ArrowRight, Loader2, Wine, Grape, Anchor, ShoppingBasket, Sparkles, Coffee, Gift, Check, Phone } from 'lucide-react';
 
-// MODIFICA FONDAMENTALE: Indirizzo backend fisso
+// INDIRIZZO BACKEND
 const API = "https://desideri-backend.onrender.com/api";
 
 // Icon mapping for upsells
@@ -199,8 +199,9 @@ const BookingPage = () => {
       return;
     }
 
-    if (!formData.guest_name || !formData.guest_email) {
-      toast.error(language === 'it' ? 'Compila tutti i campi obbligatori' : 'Please fill all required fields');
+    // MODIFICA: Controllo anche il numero di telefono
+    if (!formData.guest_name || !formData.guest_email || !formData.guest_phone) {
+      toast.error(language === 'it' ? 'Compila tutti i campi obbligatori (incluso il telefono)' : 'Please fill all required fields (including phone)');
       return;
     }
 
@@ -211,7 +212,7 @@ const BookingPage = () => {
         room_id: selectedRoom,
         guest_name: formData.guest_name,
         guest_email: formData.guest_email,
-        guest_phone: formData.guest_phone || null,
+        guest_phone: formData.guest_phone, // Invia il telefono
         check_in: format(dateRange.from, 'yyyy-MM-dd'),
         check_out: format(dateRange.to, 'yyyy-MM-dd'),
         num_guests: parseInt(formData.num_guests),
@@ -224,7 +225,6 @@ const BookingPage = () => {
 
       const response = await axios.post(`${API}/bookings`, bookingData);
       
-      // Redirect to Stripe checkout
       if (response.data.checkout_url) {
         window.location.href = response.data.checkout_url;
       }
@@ -278,7 +278,7 @@ const BookingPage = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="bg-white p-8 border border-puglia-stone/50"
+                  className="bg-white p-8 border border-puglia-stone/50 shadow-sm"
                 >
                   <h2 className="font-heading text-2xl text-adriatic-blue mb-6">
                     {language === 'it' ? 'Seleziona la stanza' : 'Select Room'}
@@ -286,21 +286,27 @@ const BookingPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {rooms.map((room) => {
                       const roomName = language === 'it' ? room.name_it : room.name_en;
+                      const isSelected = selectedRoom === room.id;
                       return (
                         <button
                           key={room.id}
                           type="button"
                           onClick={() => setSelectedRoom(room.id)}
-                          className={`p-6 border text-left transition-all ${
-                            selectedRoom === room.id 
-                              ? 'border-antique-gold bg-antique-gold/5' 
-                              : 'border-puglia-stone/50 hover:border-adriatic-blue'
+                          className={`p-6 text-left transition-all rounded-sm relative ${
+                            isSelected 
+                              ? 'border-2 border-antique-gold bg-antique-gold/5 shadow-md' 
+                              : 'border border-puglia-stone/50 hover:border-adriatic-blue hover:shadow-sm'
                           }`}
                           data-testid={`select-room-${room.id}`}
                         >
-                          <h3 className="font-heading text-lg text-adriatic-blue">{roomName}</h3>
+                          {isSelected && (
+                            <div className="absolute top-2 right-2 bg-antique-gold text-white rounded-full p-1">
+                              <Check className="w-3 h-3" />
+                            </div>
+                          )}
+                          <h3 className={`font-heading text-lg ${isSelected ? 'text-antique-gold' : 'text-adriatic-blue'}`}>{roomName}</h3>
                           <p className="text-muted-foreground text-sm mt-1">Max {room.max_guests} {t('booking.guests')}</p>
-                          <p className="text-antique-gold font-medium mt-2">€{room.price_per_night}{t('rooms.perNight')}</p>
+                          <p className="text-antique-gold font-medium mt-2 text-lg">€{room.price_per_night} <span className="text-xs text-muted-foreground">{t('rooms.perNight')}</span></p>
                         </button>
                       );
                     })}
@@ -312,12 +318,12 @@ const BookingPage = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
-                  className="bg-white p-8 border border-puglia-stone/50"
+                  className="bg-white p-8 border border-puglia-stone/50 shadow-sm"
                 >
                   <h2 className="font-heading text-2xl text-adriatic-blue mb-6">
                     {t('booking.selectDates')}
                   </h2>
-                  <div className="flex justify-center">
+                  <div className="flex justify-center bg-stone-50 p-4 rounded-md">
                     <Calendar
                       mode="range"
                       selected={dateRange}
@@ -325,18 +331,18 @@ const BookingPage = () => {
                       numberOfMonths={2}
                       locale={locale}
                       disabled={isDateUnavailable}
-                      className="border-none"
+                      className="border-none bg-transparent"
                       data-testid="booking-calendar"
                     />
                   </div>
                   {dateRange.from && dateRange.to && (
-                    <div className="mt-6 p-4 bg-puglia-sand text-center">
-                      <p className="text-adriatic-blue">
-                        <span className="font-medium">{format(dateRange.from, 'PPP', { locale })}</span>
-                        {' → '}
-                        <span className="font-medium">{format(dateRange.to, 'PPP', { locale })}</span>
+                    <div className="mt-6 p-4 bg-puglia-sand/30 border-l-4 border-antique-gold text-center">
+                      <p className="text-adriatic-blue text-lg">
+                        Dal <span className="font-bold">{format(dateRange.from, 'dd MMM', { locale })}</span>
+                        {' al '}
+                        <span className="font-bold">{format(dateRange.to, 'dd MMM', { locale })}</span>
                       </p>
-                      <p className="text-muted-foreground mt-1">{nights} {t('booking.nights')}</p>
+                      <p className="text-muted-foreground mt-1 uppercase tracking-wider text-xs">{nights} {t('booking.nights')}</p>
                     </div>
                   )}
                 </motion.div>
@@ -346,7 +352,7 @@ const BookingPage = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className="bg-white p-8 border border-puglia-stone/50"
+                  className="bg-white p-8 border border-puglia-stone/50 shadow-sm"
                 >
                   <h2 className="font-heading text-2xl text-adriatic-blue mb-6">
                     {language === 'it' ? 'I tuoi dati' : 'Your Details'}
@@ -360,7 +366,7 @@ const BookingPage = () => {
                         value={formData.guest_name}
                         onChange={handleInputChange}
                         required
-                        className="mt-2 rounded-none border-puglia-stone focus:border-adriatic-blue"
+                        className="mt-2 h-12 rounded-none border-puglia-stone focus:border-adriatic-blue focus:ring-1 focus:ring-adriatic-blue"
                         data-testid="guest-name-input"
                       />
                     </div>
@@ -373,19 +379,22 @@ const BookingPage = () => {
                         value={formData.guest_email}
                         onChange={handleInputChange}
                         required
-                        className="mt-2 rounded-none border-puglia-stone focus:border-adriatic-blue"
+                        className="mt-2 h-12 rounded-none border-puglia-stone focus:border-adriatic-blue focus:ring-1 focus:ring-adriatic-blue"
                         data-testid="guest-email-input"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="guest_phone">{t('booking.phone')}</Label>
+                      {/* MODIFICA: Telefono reso obbligatorio con asterisco */}
+                      <Label htmlFor="guest_phone">{t('booking.phone')} *</Label>
                       <Input
                         id="guest_phone"
                         name="guest_phone"
                         type="tel"
                         value={formData.guest_phone}
                         onChange={handleInputChange}
-                        className="mt-2 rounded-none border-puglia-stone focus:border-adriatic-blue"
+                        required
+                        placeholder="+39 333 1234567"
+                        className="mt-2 h-12 rounded-none border-puglia-stone focus:border-adriatic-blue focus:ring-1 focus:ring-adriatic-blue"
                         data-testid="guest-phone-input"
                       />
                     </div>
@@ -395,7 +404,7 @@ const BookingPage = () => {
                         value={String(formData.num_guests)}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, num_guests: parseInt(value) }))}
                       >
-                        <SelectTrigger className="mt-2 rounded-none border-puglia-stone" data-testid="num-guests-select">
+                        <SelectTrigger className="mt-2 h-12 rounded-none border-puglia-stone" data-testid="num-guests-select">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -413,7 +422,7 @@ const BookingPage = () => {
                         value={formData.notes}
                         onChange={handleInputChange}
                         rows={4}
-                        className="mt-2 rounded-none border-puglia-stone focus:border-adriatic-blue"
+                        className="mt-2 rounded-none border-puglia-stone focus:border-adriatic-blue focus:ring-1 focus:ring-adriatic-blue"
                         data-testid="booking-notes"
                       />
                     </div>
@@ -430,7 +439,7 @@ const BookingPage = () => {
                           value={formData.coupon_code}
                           onChange={handleInputChange}
                           placeholder={language === 'it' ? 'Inserisci codice' : 'Enter code'}
-                          className={`flex-1 rounded-none border-puglia-stone focus:border-adriatic-blue uppercase ${
+                          className={`flex-1 h-12 rounded-none border-puglia-stone focus:border-adriatic-blue uppercase ${
                             couponStatus === 'valid' ? 'border-green-500 bg-green-50' : 
                             couponStatus === 'invalid' ? 'border-red-500 bg-red-50' : ''
                           }`}
@@ -441,15 +450,16 @@ const BookingPage = () => {
                           onClick={validateCoupon}
                           disabled={!formData.coupon_code || nights === 0}
                           variant="outline"
-                          className="border-adriatic-blue text-adriatic-blue hover:bg-adriatic-blue hover:text-white"
+                          className="h-12 border-adriatic-blue text-adriatic-blue hover:bg-adriatic-blue hover:text-white"
                           data-testid="apply-coupon-btn"
                         >
                           {language === 'it' ? 'Applica' : 'Apply'}
                         </Button>
                       </div>
                       {couponStatus === 'valid' && couponDiscount && (
-                        <p className="text-green-600 text-sm mt-1">
-                          ✓ {couponDiscount.discount_type === 'percentage' 
+                        <p className="text-green-600 text-sm mt-1 flex items-center gap-1">
+                          <Check className="w-4 h-4" />
+                          {couponDiscount.discount_type === 'percentage' 
                             ? `${couponDiscount.discount_value}% di sconto applicato!` 
                             : `€${couponDiscount.discount_value} di sconto applicato!`}
                         </p>
@@ -465,7 +475,7 @@ const BookingPage = () => {
                         value={formData.stay_reason}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, stay_reason: value }))}
                       >
-                        <SelectTrigger className="mt-2 rounded-none border-puglia-stone" data-testid="stay-reason-select">
+                        <SelectTrigger className="mt-2 h-12 rounded-none border-puglia-stone" data-testid="stay-reason-select">
                           <SelectValue placeholder={language === 'it' ? 'Seleziona un motivo...' : 'Select a reason...'} />
                         </SelectTrigger>
                         <SelectContent>
@@ -480,13 +490,13 @@ const BookingPage = () => {
                   </div>
                 </motion.div>
                 
-                {/* Upsells Section */}
+                {/* Upsells Section - MODIFICATA */}
                 {nights > 0 && availableUpsells.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.3 }}
-                    className="bg-white p-8 border border-puglia-stone/50"
+                    className="bg-white p-8 border border-puglia-stone/50 shadow-sm"
                   >
                     <h2 className="font-heading text-2xl text-adriatic-blue mb-2">
                       {language === 'it' ? 'Rendi speciale il tuo soggiorno' : 'Make your stay special'}
@@ -497,6 +507,7 @@ const BookingPage = () => {
                         : 'Add exclusive experiences to your stay'}
                     </p>
                     
+                    {/* Grid degli Upsell */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {availableUpsells.map((upsell) => {
                         const IconComponent = UPSELL_ICONS[upsell.icon] || Gift;
@@ -507,31 +518,37 @@ const BookingPage = () => {
                             key={upsell.id}
                             type="button"
                             onClick={() => toggleUpsell(upsell.id)}
-                            className={`p-5 border text-left transition-all relative ${
+                            // MODIFICA: h-full per altezza uguale, rimosso overflow hidden che tagliava
+                            className={`p-5 text-left transition-all duration-300 relative h-full flex flex-col justify-start group hover:shadow-md ${
                               isSelected 
-                                ? 'border-antique-gold bg-antique-gold/5 ring-1 ring-antique-gold' 
-                                : 'border-puglia-stone/50 hover:border-adriatic-blue'
+                                ? 'border-2 border-antique-gold bg-antique-gold/5' 
+                                : 'border border-puglia-stone/50 hover:border-adriatic-blue bg-white'
                             }`}
                             data-testid={`upsell-${upsell.slug}`}
                           >
                             {isSelected && (
-                              <div className="absolute top-3 right-3 w-6 h-6 bg-antique-gold rounded-full flex items-center justify-center">
+                              <div className="absolute top-3 right-3 w-6 h-6 bg-antique-gold rounded-full flex items-center justify-center shadow-sm z-10">
                                 <Check className="w-4 h-4 text-white" />
                               </div>
                             )}
-                            <div className="flex items-start gap-4">
-                              <div className="w-10 h-10 bg-puglia-sand flex items-center justify-center flex-shrink-0">
-                                <IconComponent className="w-5 h-5 text-antique-gold" />
+                            
+                            <div className="flex items-start gap-4 mb-2">
+                              <div className={`w-12 h-12 flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-white' : 'bg-puglia-sand group-hover:bg-adriatic-blue/10'}`}>
+                                <IconComponent className={`w-6 h-6 ${isSelected ? 'text-antique-gold' : 'text-adriatic-blue'}`} />
                               </div>
                               <div className="flex-1">
-                                <h3 className="font-heading text-base text-adriatic-blue pr-8">
+                                <h3 className="font-heading text-lg text-adriatic-blue pr-6 leading-tight">
                                   {language === 'it' ? upsell.title_it : upsell.title_en}
                                 </h3>
-                                <p className="text-muted-foreground text-sm mt-1 line-clamp-2">
+                                <p className="text-antique-gold font-bold mt-1">+€{upsell.price}</p>
+                              </div>
+                            </div>
+                            
+                            {/* MODIFICA: Rimosso line-clamp, ora il testo va a capo liberamente */}
+                            <div className="pt-2 mt-auto w-full">
+                                <p className="text-muted-foreground text-sm leading-relaxed">
                                   {language === 'it' ? upsell.description_it : upsell.description_en}
                                 </p>
-                                <p className="text-antique-gold font-medium mt-2">+€{upsell.price}</p>
-                              </div>
                             </div>
                           </button>
                         );
@@ -542,23 +559,23 @@ const BookingPage = () => {
               </form>
             </div>
 
-            {/* Summary */}
+            {/* Summary Sticky */}
             <div className="lg:col-span-1">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-white p-8 border border-puglia-stone/50 sticky top-24"
+                className="bg-white p-8 border border-puglia-stone/50 shadow-xl sticky top-24"
               >
-                <h2 className="font-heading text-2xl text-adriatic-blue mb-6">
+                <h2 className="font-heading text-2xl text-adriatic-blue mb-6 border-b border-puglia-stone/30 pb-4">
                   {language === 'it' ? 'Riepilogo' : 'Summary'}
                 </h2>
 
                 {selectedRoomData && (
                   <div className="space-y-4 pb-6 border-b border-puglia-stone/30">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-start">
                       <span className="text-muted-foreground">{language === 'it' ? 'Stanza' : 'Room'}</span>
-                      <span className="text-adriatic-blue font-medium">
+                      <span className="text-adriatic-blue font-bold text-right pl-4">
                         {language === 'it' ? selectedRoomData.name_it : selectedRoomData.name_en}
                       </span>
                     </div>
@@ -574,7 +591,7 @@ const BookingPage = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">{t('booking.nights')}</span>
-                          <span className="text-adriatic-blue">{nights}</span>
+                          <span className="text-adriatic-blue font-bold">{nights}</span>
                         </div>
                       </>
                     )}
@@ -586,66 +603,35 @@ const BookingPage = () => {
                     {/* Room price breakdown */}
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">
-                        {language === 'it' ? 'Soggiorno' : 'Accommodation'} ({nights} {t('booking.nights')})
+                        {language === 'it' ? 'Soggiorno' : 'Accommodation'}
                       </span>
                       <span className="text-adriatic-blue">€{roomPrice.toFixed(2)}</span>
                     </div>
                     
-                    {/* Show daily price breakdown if there are custom prices */}
-                    {Object.keys(customPrices).length > 0 && (
-                      <div className="text-xs text-muted-foreground pl-2 border-l-2 border-puglia-stone/30 space-y-1">
-                        {(() => {
-                          let current = new Date(dateRange.from);
-                          const end = new Date(dateRange.to);
-                          const prices = [];
-                          while (current < end) {
-                            const dateStr = format(current, 'yyyy-MM-dd');
-                            const dayPrice = customPrices[dateStr] || selectedRoomData.price_per_night;
-                            const isCustom = customPrices[dateStr] !== undefined;
-                            prices.push(
-                              <div key={dateStr} className="flex justify-between">
-                                <span>{format(current, 'dd/MM', { locale })}</span>
-                                <span className={isCustom ? 'text-antique-gold' : ''}>
-                                  €{dayPrice}
-                                  {isCustom && ' ★'}
-                                </span>
-                              </div>
-                            );
-                            current = addDays(current, 1);
-                          }
-                          return prices.length <= 7 ? prices : (
-                            <span className="italic">{language === 'it' ? 'Prezzi variabili per data' : 'Variable daily prices'}</span>
-                          );
-                        })()}
-                      </div>
-                    )}
-                    
                     {/* Upsells */}
                     {selectedUpsells.length > 0 && (
-                      <>
-                        <div className="border-t border-puglia-stone/30 pt-4">
-                          <span className="text-xs text-muted-foreground uppercase tracking-wider">
-                            {language === 'it' ? 'Extra selezionati' : 'Selected extras'}
-                          </span>
-                        </div>
+                      <div className="bg-puglia-sand/30 p-3 rounded-md space-y-2 mt-2">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold block mb-2">
+                          {language === 'it' ? 'Extra inclusi' : 'Included extras'}
+                        </span>
                         {selectedUpsells.map(upsellId => {
                           const upsell = upsells.find(u => u.id === upsellId);
                           if (!upsell) return null;
                           return (
                             <div key={upsellId} className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">
+                              <span className="text-adriatic-blue/80 truncate pr-2">
                                 {language === 'it' ? upsell.title_it : upsell.title_en}
                               </span>
-                              <span className="text-adriatic-blue">+€{upsell.price.toFixed(2)}</span>
+                              <span className="text-adriatic-blue font-medium">+€{upsell.price.toFixed(2)}</span>
                             </div>
                           );
                         })}
-                      </>
+                      </div>
                     )}
                     
                     {/* Subtotal if there are upsells */}
                     {selectedUpsells.length > 0 && (
-                      <div className="flex justify-between text-sm pt-2 border-t border-puglia-stone/30">
+                      <div className="flex justify-between text-sm pt-2">
                         <span className="text-muted-foreground">{language === 'it' ? 'Subtotale' : 'Subtotal'}</span>
                         <span className="text-adriatic-blue">€{subtotal.toFixed(2)}</span>
                       </div>
@@ -653,18 +639,18 @@ const BookingPage = () => {
                     
                     {/* Show discount if applied */}
                     {discountAmount > 0 && (
-                      <div className="flex justify-between text-sm text-green-600">
+                      <div className="flex justify-between text-sm text-green-600 bg-green-50 p-2 rounded-md border border-green-100">
                         <span>
-                          {language === 'it' ? 'Sconto coupon' : 'Coupon discount'}
+                          {language === 'it' ? 'Sconto' : 'Discount'}
                           {couponDiscount?.discount_type === 'percentage' && ` (${couponDiscount.discount_value}%)`}
                         </span>
                         <span>-€{discountAmount.toFixed(2)}</span>
                       </div>
                     )}
                     
-                    <div className="flex justify-between text-lg pt-4 border-t border-puglia-stone/30">
-                      <span className="font-heading text-adriatic-blue">{t('booking.total')}</span>
-                      <span className="font-heading text-antique-gold text-2xl">€{totalPrice.toFixed(2)}</span>
+                    <div className="flex justify-between items-center pt-6 border-t-2 border-antique-gold/20 mt-4">
+                      <span className="font-heading text-adriatic-blue text-lg">{t('booking.total')}</span>
+                      <span className="font-heading text-antique-gold text-3xl">€{totalPrice.toFixed(2)}</span>
                     </div>
                   </div>
                 )}
@@ -672,7 +658,7 @@ const BookingPage = () => {
                 <Button
                   onClick={handleSubmit}
                   disabled={!selectedRoom || !dateRange.from || !dateRange.to || submitting}
-                  className="w-full mt-8 bg-antique-gold text-adriatic-blue hover:bg-adriatic-blue hover:text-white py-6 text-sm uppercase tracking-widest disabled:opacity-50"
+                  className="w-full mt-8 bg-antique-gold text-adriatic-blue hover:bg-adriatic-blue hover:text-white py-6 text-sm uppercase tracking-widest disabled:opacity-50 shadow-lg hover:shadow-xl transition-all"
                   data-testid="submit-booking"
                 >
                   {submitting ? (
@@ -685,7 +671,8 @@ const BookingPage = () => {
                   )}
                 </Button>
 
-                <p className="text-xs text-muted-foreground text-center mt-4">
+                <p className="text-xs text-muted-foreground text-center mt-4 flex items-center justify-center gap-1">
+                  <Lock size={12} />
                   {language === 'it' 
                     ? 'Pagamento sicuro con Stripe' 
                     : 'Secure payment with Stripe'}
@@ -698,5 +685,13 @@ const BookingPage = () => {
     </div>
   );
 };
+
+// Simple lock icon for footer
+const Lock = ({ size }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+  </svg>
+);
 
 export default BookingPage;
