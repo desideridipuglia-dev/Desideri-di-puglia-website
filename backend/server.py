@@ -38,9 +38,10 @@ db = client[os.environ.get('DB_NAME', 'desideri_db')]
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
 
-# EMAIL CONFIGURATION (GMAIL SMTP)
-SMTP_HOST = 'smtp.gmail.com'
-SMTP_PORT = 587
+# EMAIL CONFIGURATION (SMTP UNIVERSALE)
+# Supporta Gmail, Outlook, ecc. leggendo da variabili d'ambiente
+SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
 SMTP_USER = os.environ.get('EMAIL_USER') 
 SMTP_PASSWORD = os.environ.get('EMAIL_PASS')
 SENDER_EMAIL = SMTP_USER 
@@ -103,7 +104,7 @@ class Booking(BaseModel):
     room_id: str
     guest_email: str
     guest_name: str
-    guest_phone: Optional[str] = None # Opzionale nel DB per supportare import iCal
+    guest_phone: Optional[str] = None 
     check_in: str
     check_out: str
     num_guests: int
@@ -113,7 +114,7 @@ class Booking(BaseModel):
     upsells: List[str] = []
     status: str = "pending"
     payment_status: str = "pending"
-    source: str = "website" # website, booking_ical
+    source: str = "website" 
     stripe_session_id: Optional[str] = None
     notes: Optional[str] = None
     stay_reason: Optional[str] = None
@@ -126,7 +127,7 @@ class BookingCreate(BaseModel):
     room_id: str
     guest_email: EmailStr
     guest_name: str
-    guest_phone: str # OBBLIGATORIO: Richiesto dal frontend
+    guest_phone: str 
     check_in: str
     check_out: str
     num_guests: int
@@ -255,16 +256,16 @@ class SiteImagesUpdate(BaseModel):
     hero_image: Optional[str] = None
     cta_background: Optional[str] = None
 
-# ==================== EMAIL LOGIC (GMAIL SMTP) ====================
+# ==================== EMAIL LOGIC ====================
 
 def _send_email_sync(to_email: str, subject: str, html_content: str):
-    """Sync function to send email via Gmail SMTP"""
+    """Sync function to send email via SMTP"""
     if not SMTP_USER or not SMTP_PASSWORD:
         logger.error("Credenziali email mancanti")
         return False
     try:
         msg = MIMEMultipart()
-        msg['From'] = SMTP_USER
+        msg['From'] = SENDER_EMAIL
         msg['To'] = to_email
         msg['Subject'] = subject
         msg.attach(MIMEText(html_content, 'html'))
@@ -708,7 +709,7 @@ async def update_booking_status(booking_id: str, status: str):
 @api_router.post("/reviews")
 async def create_review(data: ReviewCreate):
     booking = await db.bookings.find_one({"id": data.booking_id})
-    if not booking or booking["status"] != "confirmed":
+    if not booking or booking["status"] != "confirmed": # Corretto da completed a confirmed
         raise HTTPException(400, "Booking not confirmed")
     review = Review(
         booking_id=data.booking_id,
