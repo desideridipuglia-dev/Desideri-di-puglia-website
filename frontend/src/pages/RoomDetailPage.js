@@ -16,7 +16,8 @@ import {
   Coffee,
   ChevronLeft,
   ChevronRight,
-  Star 
+  Star,
+  CalendarCheck // NUOVA ICONA IMPORTATA
 } from 'lucide-react';
 
 // INDIRIZZO BACKEND FISSO
@@ -95,7 +96,6 @@ const RoomDetailPage = () => {
     <div data-testid="room-detail-page" className="min-h-screen bg-stone-50 font-sans">
       
       {/* --- HERO SECTION --- */}
-      {/* Mobile: h-[50vh] (più bassa), Desktop: h-[80vh] (cinematografica) */}
       <section className="relative h-[55vh] md:h-[80vh] overflow-hidden">
         {images.length > 0 && (
           <>
@@ -111,12 +111,11 @@ const RoomDetailPage = () => {
             
             <div className="absolute inset-0 bg-gradient-to-t from-adriatic-blue/90 via-transparent to-black/20" />
             
-            {/* Navigation Arrows - Ridotte su Mobile */}
+            {/* Navigation Arrows */}
             {images.length > 1 && (
               <>
                 <button
                   onClick={prevImage}
-                  // Su mobile: p-2 e niente hover scale. Su desktop: p-4 e hover effects
                   className="absolute left-4 md:left-10 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/30 backdrop-blur-md p-2 md:p-4 rounded-full text-white border border-white/20 transition-all duration-300 md:hover:scale-110 group"
                   aria-label="Immagine precedente"
                 >
@@ -146,7 +145,7 @@ const RoomDetailPage = () => {
           </>
         )}
 
-        {/* Pulsante Indietro - Più piccolo su mobile */}
+        {/* Pulsante Indietro */}
         <Link 
           to="/" 
           className="absolute top-6 left-4 md:top-28 md:left-12 flex items-center gap-2 text-white/90 hover:text-white hover:bg-white/20 transition-all duration-300 z-20 backdrop-blur-md bg-black/20 px-3 py-1.5 md:px-5 md:py-2.5 rounded-full border border-white/10"
@@ -163,7 +162,6 @@ const RoomDetailPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              {/* Titolo ridimensionato per mobile (text-4xl) vs desktop (text-8xl) */}
               <h1 className="font-heading text-4xl md:text-7xl lg:text-8xl text-white mb-3 md:mb-6 drop-shadow-2xl leading-tight">
                 {name}
               </h1>
@@ -174,9 +172,12 @@ const RoomDetailPage = () => {
                   <span className="text-xs md:text-sm tracking-wide font-medium">{t('rooms.maxGuests').replace('{count}', room.max_guests)}</span>
                 </div>
                 
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl md:text-4xl font-heading text-antique-gold drop-shadow-md">€{room.price_per_night}</span>
-                  <span className="text-xs md:text-sm font-body text-white/80 uppercase tracking-wider">{t('rooms.perNight')}</span>
+                {/* --- MODIFICA 1: Rimesso badge generico al posto del prezzo --- */}
+                <div className="flex items-center gap-2 bg-antique-gold/90 backdrop-blur-md px-3 py-1.5 md:px-5 md:py-2.5 rounded-full text-adriatic-blue font-bold shadow-lg">
+                  <CalendarCheck className="w-4 h-4" />
+                  <span className="text-xs md:text-sm uppercase tracking-wide">
+                    {language === 'it' ? 'Verifica disponibilità' : 'Check availability'}
+                  </span>
                 </div>
               </div>
             </motion.div>
@@ -185,7 +186,6 @@ const RoomDetailPage = () => {
       </section>
 
       {/* --- CONTENT SECTION --- */}
-      {/* Padding ridotto su mobile: py-10 invece di py-20 */}
       <section className="py-10 md:py-32">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16">
@@ -197,7 +197,6 @@ const RoomDetailPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                {/* DIVISORE LUXURY (Nascosto su mobile se vuoi risparmiare spazio, o ridotto) */}
                 <div className="flex items-center gap-4 mb-6 md:mb-10 opacity-60">
                   <Star className="w-3 h-3 md:w-4 md:h-4 text-antique-gold fill-antique-gold" />
                   <div className="h-[1px] w-12 md:w-20 bg-antique-gold"></div>
@@ -211,7 +210,7 @@ const RoomDetailPage = () => {
                   {description}
                 </p>
 
-                {/* Sezione Servizi - PULIZIA TOTALE SU MOBILE */}
+                {/* Sezione Servizi */}
                 <div className="mb-10">
                     <div className="flex items-center gap-4 mb-6 md:mb-10 opacity-60">
                         <Star className="w-3 h-3 md:w-4 md:h-4 text-antique-gold fill-antique-gold" />
@@ -222,14 +221,11 @@ const RoomDetailPage = () => {
                         {t('rooms.amenities')}
                     </h2>
                     
-                    {/* SU MOBILE: Grid 2 colonne strette, niente bordi, niente cerchi giganti */}
-                    {/* SU DESKTOP: Grid spaziata, box con hover effects (Luxury style) */}
                     <div className="grid grid-cols-2 gap-y-4 md:gap-y-6 gap-x-4 md:gap-x-8">
                         {room.amenities?.map((amenity) => {
                             const Icon = amenityIcons[amenity] || Wifi;
                             return (
                             <div key={amenity} className="flex items-center gap-3 md:gap-5 group md:p-4 rounded-xl md:hover:bg-white md:hover:shadow-sm transition-all duration-300">
-                                {/* Icona: Piccola e pulita su mobile, Grande nel cerchio su desktop */}
                                 <div className="w-8 h-8 md:w-14 md:h-14 bg-transparent md:bg-white md:border md:border-stone-200 flex items-center justify-start md:justify-center rounded-full md:group-hover:border-antique-gold md:group-hover:bg-antique-gold transition-all duration-300">
                                     <Icon className="w-5 h-5 md:w-6 md:h-6 text-antique-gold md:text-adriatic-blue md:group-hover:text-white transition-colors" />
                                 </div>
@@ -244,24 +240,29 @@ const RoomDetailPage = () => {
               </motion.div>
             </div>
 
-            {/* Colonna Destra (Booking Card) */}
+            {/* Colonna Destra (Booking Card SENZA PREZZO) */}
             <div className="lg:col-span-5 relative">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                // Mobile: Shadow più leggera, padding ridotto
                 className="bg-white p-6 md:p-12 border border-stone-100 shadow-xl md:shadow-2xl rounded-2xl md:rounded-3xl sticky top-24 md:top-32 z-10"
               >
                 <div className="absolute -top-4 md:-top-6 left-1/2 -translate-x-1/2 bg-adriatic-blue text-white px-4 py-1 md:px-6 md:py-2 rounded-full text-[10px] md:text-xs uppercase tracking-widest font-bold shadow-lg whitespace-nowrap">
                     Best Price Guaranteed
                 </div>
 
+                {/* --- MODIFICA 2: HEADER CARD SENZA PREZZO --- */}
                 <div className="text-center mb-6 md:mb-10 pb-6 md:pb-8 border-b border-stone-100">
-                  <div className="flex justify-center items-baseline gap-2">
-                      <span className="font-heading text-4xl md:text-6xl text-adriatic-blue">€{room.price_per_night}</span>
+                  <div className="flex justify-center items-center gap-2 mb-2">
+                      <CalendarCheck className="w-8 h-8 text-antique-gold" />
                   </div>
-                  <div className="text-stone-400 text-[10px] md:text-xs mt-2 md:mt-3 uppercase tracking-[0.2em]">{t('rooms.perNight')}</div>
+                  <h3 className="font-heading text-2xl md:text-3xl text-adriatic-blue">
+                    {language === 'it' ? 'Prenota il tuo soggiorno' : 'Book your stay'}
+                  </h3>
+                  <p className="text-stone-500 text-xs md:text-sm mt-2">
+                    {language === 'it' ? 'Seleziona le date per vedere i prezzi' : 'Select dates to see prices'}
+                  </p>
                 </div>
 
                 <div className="space-y-4 md:space-y-6 mb-6 md:mb-10 text-sm">

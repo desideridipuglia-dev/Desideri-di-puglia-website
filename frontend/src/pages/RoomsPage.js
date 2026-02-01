@@ -4,8 +4,22 @@ import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
 import RoomCard from '../components/RoomCard';
 
-// MODIFICA FONDAMENTALE: Indirizzo backend fisso per caricare la lista stanze
+// INDIRIZZO BACKEND FISSO
 const API = "https://desideri-backend.onrender.com/api";
+
+// --- FUNZIONE MAGICA PER OTTIMIZZARE QUALSIASI LINK (Copiata da Home) ---
+const getOptimizedUrl = (url) => {
+  if (!url) return "";
+  
+  // 1. Se è UNSPLASH, usiamo i suoi parametri nativi
+  if (url.includes("images.unsplash.com")) {
+     const baseUrl = url.split('?')[0];
+     return `${baseUrl}?q=80&w=1200&auto=format&fit=crop`;
+  }
+
+  // 2. PER TUTTI GLI ALTRI (Booking, Airbnb, link diretti, ecc.)
+  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=1200&q=80&output=webp`;
+};
 
 const RoomsPage = () => {
   const { t } = useLanguage();
@@ -28,7 +42,7 @@ const RoomsPage = () => {
   }, []);
 
   return (
-    <div data-testid="rooms-page" className="min-h-screen bg-puglia-sand pt-20">
+    <div data-testid="rooms-page" className="min-h-screen bg-stone-50 pt-20">
       {/* Header */}
       <section className="py-16 md:py-24 bg-adriatic-blue">
         <div className="max-w-7xl mx-auto px-6 md:px-12 text-center">
@@ -51,14 +65,30 @@ const RoomsPage = () => {
       <section className="py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           {loading ? (
-            <div className="flex justify-center">
-              <div className="spinner" />
+            <div className="flex justify-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-adriatic-blue" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {rooms.map((room, index) => (
-                <RoomCard key={room.id} room={room} index={index} />
-              ))}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              {rooms.map((room, index) => {
+                // Ottimizzazione immagini prima di passare i dati alla card
+                const optimizedRoom = {
+                  ...room,
+                  images: room.images.map(img => {
+                    const url = typeof img === 'string' ? img : img.url;
+                    const optimizedUrl = getOptimizedUrl(url); 
+                    return typeof img === 'string' ? optimizedUrl : { ...img, url: optimizedUrl };
+                  })
+                };
+
+                return (
+                  <RoomCard 
+                    key={room.id} 
+                    room={optimizedRoom} 
+                    index={index} 
+                  />
+                );
+              })}
             </div>
           )}
         </div>
