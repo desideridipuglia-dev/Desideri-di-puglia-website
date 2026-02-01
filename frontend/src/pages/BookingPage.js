@@ -245,16 +245,19 @@ const BookingPage = () => {
   return (
     <div data-testid="booking-page" className="min-h-screen bg-stone-50 pt-20 pb-40 lg:pb-0 font-sans">
       
-      {/* --- FIX PER WHATSAPP: Alza il widget solo su mobile --- */}
+      {/* --- CSS FORCE WHATSAPP UP --- */}
       <style>{`
         @media (max-width: 768px) {
-          /* Target generico per widget comuni come Elfsight o custom */
-          [class*="eapps-widget-floating-button"], 
-          .elfsight-app-whatsapp-chat,
+          /* Intercetta quasi tutti i widget di chat noti */
+          [class*="eapps-widget"],
+          [class*="whatsapp"],
           #whatsapp-widget,
-          .wa-chat-widget {
-            bottom: 110px !important; /* Lo spinge sopra la nostra barra */
+          .wa-chat-widget,
+          div[id^="wa"],
+          a[href*="wa.me"] {
+            bottom: 120px !important; /* Spinta verso l'alto obbligatoria */
             transition: bottom 0.3s ease;
+            z-index: 40 !important; /* Sotto la nostra barra se necessario, o sopra ma spostato */
           }
         }
       `}</style>
@@ -519,9 +522,9 @@ const BookingPage = () => {
         </div>
       </section>
 
-      {/* --- MOBILE STICKY BAR: DESIGN "ISLAND" --- */}
+      {/* --- MOBILE STICKY BAR: DESIGN "ISLAND" + LOGICA VISIBILITÀ --- */}
       <AnimatePresence>
-        {selectedRoom && (
+        {selectedRoom && dateRange.from && dateRange.to && (
             <motion.div 
                 initial={{ y: 100 }} 
                 animate={{ y: 0 }} 
@@ -539,6 +542,7 @@ const BookingPage = () => {
                 
                 <Button 
                   onClick={(e) => { 
+                      // Se mancano le date, scrolla al calendario (anche se la barra non dovrebbe apparire senza date, sicurezza in più)
                       if (!dateRange.from || !dateRange.to) { 
                           document.getElementById('booking-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
                           toast.info(language === 'it' ? 'Seleziona le date' : 'Select dates'); 
