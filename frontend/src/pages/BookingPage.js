@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
-import { Calendar } from '../components/ui/calendar';
+import { Calendar } from '../components/ui/calendar'; // Assicurati che questo import sia corretto
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -21,7 +21,7 @@ const getOptimizedUrl = (url) => {
   if (!url) return "";
   if (url.includes("images.unsplash.com")) {
      const baseUrl = url.split('?')[0];
-     return `${baseUrl}?q=80&w=300&auto=format&fit=crop`; // Risoluzione leggermente più alta
+     return `${baseUrl}?q=80&w=300&auto=format&fit=crop`;
   }
   return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=300&q=80&output=webp`;
 };
@@ -269,15 +269,15 @@ const BookingPage = () => {
             <div className="lg:col-span-8 space-y-10">
               <form onSubmit={handleSubmit} id="booking-form" className="space-y-10">
                 
-                {/* 1. Room Selection - LARGER CARDS */}
+                {/* 1. Room Selection */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="bg-white p-6 md:p-8 rounded-2xl border border-stone-100 shadow-sm"
+                  className="bg-white p-6 md:p-8 rounded-3xl border border-stone-100 shadow-sm"
                 >
                   <h2 className="font-heading text-2xl text-adriatic-blue mb-8 flex items-center gap-3">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-antique-gold/10 text-antique-gold text-sm font-bold">1</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-600 text-sm font-bold">1</span>
                     {language === 'it' ? 'Seleziona la stanza' : 'Select Room'}
                   </h2>
                   
@@ -292,15 +292,12 @@ const BookingPage = () => {
                           key={room.id}
                           type="button"
                           onClick={() => setSelectedRoom(room.id)}
-                          // Padding aumentato (p-5), bordo più spesso su selezione
                           className={`group flex items-center gap-6 p-5 text-left transition-all duration-300 rounded-2xl border relative overflow-hidden ${
                             isSelected 
-                              ? 'border-2 border-antique-gold bg-antique-gold/5 shadow-md scale-[1.01]' 
+                              ? 'border-2 border-orange-400 bg-orange-50/50 shadow-md scale-[1.01]' 
                               : 'border border-stone-200 hover:border-adriatic-blue/30 hover:shadow-lg bg-white'
                           }`}
-                          data-testid={`select-room-${room.id}`}
                         >
-                          {/* Thumbnail Image Larger */}
                           <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 rounded-xl overflow-hidden bg-stone-200 shadow-inner">
                              {thumbUrl && (
                                 <img src={thumbUrl} alt={roomName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
@@ -312,14 +309,13 @@ const BookingPage = () => {
                                 {roomName}
                             </h3>
                             <p className="text-stone-500 text-sm md:text-base flex items-center gap-2 font-light">
-                                <span className={`inline-block w-2 h-2 rounded-full ${isSelected ? 'bg-antique-gold' : 'bg-stone-300'}`}></span>
+                                <span className={`inline-block w-2 h-2 rounded-full ${isSelected ? 'bg-orange-500' : 'bg-stone-300'}`}></span>
                                 Max {room.max_guests} {t('booking.guests')}
                             </p>
                           </div>
 
-                          {/* Selection Indicator */}
                           <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                              isSelected ? 'border-antique-gold bg-antique-gold' : 'border-stone-300 group-hover:border-adriatic-blue'
+                              isSelected ? 'border-orange-500 bg-orange-500 scale-110' : 'border-stone-300 group-hover:border-adriatic-blue'
                           }`}>
                               {isSelected && <Check className="w-5 h-5 text-white" />}
                           </div>
@@ -329,88 +325,107 @@ const BookingPage = () => {
                   </div>
                 </motion.div>
 
-                {/* 2. Date Selection - VINTAGE CALENDAR */}
+                {/* 2. Date Selection - COLORFUL & PLAYFUL CALENDAR */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
-                  className="bg-white p-6 md:p-8 rounded-2xl border border-stone-100 shadow-sm"
+                  className="bg-white p-6 md:p-8 rounded-3xl border border-stone-100 shadow-sm"
                 >
                   <h2 className="font-heading text-2xl text-adriatic-blue mb-8 flex items-center gap-3">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-antique-gold/10 text-antique-gold text-sm font-bold">2</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-teal-100 text-teal-700 text-sm font-bold">2</span>
                     {t('booking.selectDates')}
                   </h2>
                   
-                  {/* Container Calendario Vintage */}
+                  {/* Container Calendario Design Pop */}
                   <div className="flex justify-center w-full">
-                    <div className="relative p-6 md:p-10 rounded-3xl bg-[#FFFDF5] border border-[#E5E0D0] shadow-[inset_0_0_40px_rgba(230,225,210,0.5)] max-w-md w-full">
-                        {/* Decorazioni Vintage */}
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-16 h-1 bg-[#E5E0D0] rounded-full opacity-50"></div>
-                        
-                        <Calendar
-                            mode="range"
-                            selected={dateRange}
-                            onSelect={setDateRange}
-                            numberOfMonths={1} // SINGLE MONTH VIEW
-                            pagedNavigation // Navigation arrows enabled
-                            locale={locale}
-                            disabled={isDateUnavailable}
-                            className="p-0 pointer-events-auto"
-                            classNames={{
-                                month: "space-y-6 w-full",
-                                caption: "flex justify-center pt-2 relative items-center mb-6",
-                                caption_label: "text-2xl font-heading text-adriatic-blue font-normal capitalize tracking-wide",
-                                nav: "space-x-1 flex items-center",
-                                nav_button: "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100 hover:bg-[#F0EBE0] rounded-full transition-all text-stone-600",
-                                nav_button_previous: "absolute left-1",
-                                nav_button_next: "absolute right-1",
-                                table: "w-full border-collapse space-y-1",
-                                head_row: "flex w-full justify-between mb-2",
-                                head_cell: "text-stone-400 rounded-md w-9 font-normal text-[0.8rem] uppercase tracking-widest font-sans",
-                                row: "flex w-full mt-2 justify-between",
-                                cell: "h-10 w-10 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-full [&:has([aria-selected].day-outside)]:bg-transparent [&:has([aria-selected])]:bg-antique-gold/10 first:[&:has([aria-selected])]:rounded-l-full last:[&:has([aria-selected])]:rounded-r-full focus-within:relative focus-within:z-20",
-                                day: "h-10 w-10 p-0 font-normal text-stone-700 aria-selected:opacity-100 hover:bg-[#F0EBE0] rounded-full transition-colors font-sans",
-                                day_range_end: "day-range-end",
-                                day_selected: "bg-antique-gold text-white hover:bg-antique-gold hover:text-white shadow-md",
-                                day_today: "bg-stone-100 text-stone-900 border border-stone-200",
-                                day_outside: "text-stone-300 opacity-50",
-                                day_disabled: "text-stone-300 opacity-50 line-through decoration-stone-300",
-                                day_range_middle: "aria-selected:bg-antique-gold/20 aria-selected:text-stone-900 rounded-none",
-                                day_hidden: "invisible",
-                            }}
-                            data-testid="booking-calendar"
-                        />
+                    {/* Sfondo decorativo "blob" */}
+                    <div className="relative p-2 md:p-4 max-w-lg w-full">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse delay-700"></div>
+
+                        <div className="relative bg-white/80 backdrop-blur-xl p-4 md:p-8 rounded-[2rem] border border-white shadow-xl">
+                            <Calendar
+                                mode="range"
+                                selected={dateRange}
+                                onSelect={setDateRange}
+                                numberOfMonths={1}
+                                pagedNavigation
+                                locale={locale}
+                                disabled={isDateUnavailable}
+                                className="p-0 pointer-events-auto"
+                                classNames={{
+                                    month: "space-y-6 w-full",
+                                    caption: "flex justify-between items-center px-4 mb-6",
+                                    caption_label: "text-2xl font-heading text-adriatic-blue font-bold capitalize tracking-tight",
+                                    nav: "flex items-center gap-2",
+                                    nav_button: "h-9 w-9 bg-stone-100 hover:bg-orange-100 hover:text-orange-600 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
+                                    nav_button_previous: "",
+                                    nav_button_next: "",
+                                    table: "w-full border-collapse",
+                                    head_row: "flex w-full justify-between mb-4 px-2",
+                                    head_cell: "text-stone-400 w-10 text-xs uppercase tracking-widest font-bold",
+                                    row: "flex w-full mt-2 justify-between",
+                                    cell: "h-10 w-10 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                                    
+                                    // Stili delle celle base
+                                    day: "h-10 w-10 p-0 font-medium text-stone-600 hover:bg-stone-100 rounded-full transition-all duration-300",
+                                    
+                                    // Stati specifici
+                                    day_selected: "bg-orange-500 text-white shadow-lg shadow-orange-500/30 scale-110 font-bold", // Selezione principale (inizio/fine)
+                                    day_today: "bg-teal-50 text-teal-700 border border-teal-200 font-bold", // Oggi
+                                    day_outside: "text-stone-300 opacity-50",
+                                    day_disabled: "text-stone-200 line-through opacity-40",
+                                    day_range_middle: "bg-orange-100 text-orange-700 rounded-none scale-100 !rounded-none mx-0 w-full", // Il range in mezzo
+                                    day_range_start: "rounded-l-full rounded-r-none", // Arrotonda sinistra
+                                    day_range_end: "rounded-r-full rounded-l-none",   // Arrotonda destra
+                                    day_hidden: "invisible",
+                                }}
+                                
+                                // Animazione personalizzata per i giorni
+                                components={{
+                                    DayContent: ({ date, ...props }) => (
+                                        <motion.div
+                                            whileHover={{ scale: 1.2 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            className="w-full h-full flex items-center justify-center"
+                                        >
+                                            {date.getDate()}
+                                        </motion.div>
+                                    )
+                                }}
+                            />
+                        </div>
                     </div>
                   </div>
                 </motion.div>
 
-                {/* 3. Guest Details - More spacing */}
+                {/* 3. Guest Details */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className="bg-white p-6 md:p-8 rounded-2xl border border-stone-100 shadow-sm"
+                  className="bg-white p-6 md:p-8 rounded-3xl border border-stone-100 shadow-sm"
                 >
                    <h2 className="font-heading text-2xl text-adriatic-blue mb-8 flex items-center gap-3">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-antique-gold/10 text-antique-gold text-sm font-bold">3</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-bold">3</span>
                     {language === 'it' ? 'I tuoi dati' : 'Your Details'}
                   </h2>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* ... (Campi input con stile coerente) ... */}
                     <div className="space-y-3">
-                      <Label htmlFor="guest_name" className="text-stone-600">{t('booking.name')} *</Label>
+                      <Label htmlFor="guest_name" className="text-stone-600 font-medium">{t('booking.name')} *</Label>
                       <Input
                         id="guest_name"
                         name="guest_name"
                         value={formData.guest_name}
                         onChange={handleInputChange}
                         required
-                        className="h-12 rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold bg-stone-50/30"
+                        className="h-12 rounded-xl border-stone-200 focus:border-orange-400 focus:ring-orange-400 bg-stone-50/50"
                       />
                     </div>
                     <div className="space-y-3">
-                      <Label htmlFor="guest_email" className="text-stone-600">{t('booking.email')} *</Label>
+                      <Label htmlFor="guest_email" className="text-stone-600 font-medium">{t('booking.email')} *</Label>
                       <Input
                         id="guest_email"
                         name="guest_email"
@@ -418,11 +433,11 @@ const BookingPage = () => {
                         value={formData.guest_email}
                         onChange={handleInputChange}
                         required
-                        className="h-12 rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold bg-stone-50/30"
+                        className="h-12 rounded-xl border-stone-200 focus:border-orange-400 focus:ring-orange-400 bg-stone-50/50"
                       />
                     </div>
                     <div className="space-y-3">
-                      <Label htmlFor="guest_phone" className="text-stone-600">{t('booking.phone')} *</Label>
+                      <Label htmlFor="guest_phone" className="text-stone-600 font-medium">{t('booking.phone')} *</Label>
                       <Input
                         id="guest_phone"
                         name="guest_phone"
@@ -431,16 +446,16 @@ const BookingPage = () => {
                         onChange={handleInputChange}
                         required
                         placeholder="+39 ..."
-                        className="h-12 rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold bg-stone-50/30"
+                        className="h-12 rounded-xl border-stone-200 focus:border-orange-400 focus:ring-orange-400 bg-stone-50/50"
                       />
                     </div>
                     <div className="space-y-3">
-                      <Label htmlFor="num_guests" className="text-stone-600">{t('booking.guests')}</Label>
+                      <Label htmlFor="num_guests" className="text-stone-600 font-medium">{t('booking.guests')}</Label>
                       <Select
                         value={String(formData.num_guests)}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, num_guests: parseInt(value) }))}
                       >
-                        <SelectTrigger className="h-12 rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold bg-stone-50/30">
+                        <SelectTrigger className="h-12 rounded-xl border-stone-200 focus:border-orange-400 focus:ring-orange-400 bg-stone-50/50">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -455,28 +470,28 @@ const BookingPage = () => {
                     </div>
                     
                     <div className="md:col-span-2 space-y-3">
-                      <Label htmlFor="notes" className="text-stone-600">{t('booking.notes')}</Label>
+                      <Label htmlFor="notes" className="text-stone-600 font-medium">{t('booking.notes')}</Label>
                       <Textarea
                         id="notes"
                         name="notes"
                         value={formData.notes}
                         onChange={handleInputChange}
                         rows={3}
-                        className="rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold bg-stone-50/30 resize-none"
+                        className="rounded-xl border-stone-200 focus:border-orange-400 focus:ring-orange-400 bg-stone-50/50 resize-none"
                       />
                     </div>
 
                     {/* Stay Reason & Coupon */}
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-6 border-t border-stone-100">
                         <div className="space-y-3">
-                            <Label htmlFor="stay_reason" className="text-xs uppercase tracking-widest text-stone-500">
+                            <Label htmlFor="stay_reason" className="text-xs uppercase tracking-widest text-stone-500 font-bold">
                                 {language === 'it' ? 'Occasione Speciale?' : 'Special Occasion?'}
                             </Label>
                             <Select
                                 value={formData.stay_reason}
                                 onValueChange={(value) => setFormData(prev => ({ ...prev, stay_reason: value }))}
                             >
-                                <SelectTrigger className="h-11 rounded-lg border-stone-200 text-sm bg-stone-50/30">
+                                <SelectTrigger className="h-11 rounded-xl border-stone-200 text-sm bg-stone-50/50">
                                 <SelectValue placeholder={language === 'it' ? 'Seleziona...' : 'Select...'} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -490,7 +505,7 @@ const BookingPage = () => {
                         </div>
 
                         <div className="space-y-3">
-                            <Label htmlFor="coupon_code" className="text-xs uppercase tracking-widest text-stone-500">
+                            <Label htmlFor="coupon_code" className="text-xs uppercase tracking-widest text-stone-500 font-bold">
                                 {language === 'it' ? 'Hai un codice?' : 'Have a code?'}
                             </Label>
                             <div className="flex gap-2">
@@ -499,7 +514,7 @@ const BookingPage = () => {
                                 name="coupon_code"
                                 value={formData.coupon_code}
                                 onChange={handleInputChange}
-                                className={`h-11 rounded-lg uppercase text-sm bg-stone-50/30 ${
+                                className={`h-11 rounded-xl uppercase text-sm bg-stone-50/50 ${
                                     couponStatus === 'valid' ? 'border-green-500 text-green-700 bg-green-50' : 
                                     couponStatus === 'invalid' ? 'border-red-500 text-red-700 bg-red-50' : ''
                                 }`}
@@ -509,13 +524,13 @@ const BookingPage = () => {
                                 onClick={validateCoupon}
                                 disabled={!formData.coupon_code || nights === 0}
                                 variant="outline"
-                                className="h-11 px-4 border-stone-300 hover:bg-stone-50"
+                                className="h-11 px-4 border-stone-300 hover:bg-stone-50 rounded-xl"
                                 >
                                 {language === 'it' ? 'OK' : 'OK'}
                                 </Button>
                             </div>
                              {couponStatus === 'valid' && couponDiscount && (
-                                <p className="text-green-600 text-xs mt-1">
+                                <p className="text-green-600 text-xs mt-1 font-bold">
                                   Sconto applicato!
                                 </p>
                               )}
@@ -530,7 +545,7 @@ const BookingPage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.3 }}
-                    className="bg-white p-6 md:p-8 rounded-2xl border border-stone-100 shadow-sm"
+                    className="bg-white p-6 md:p-8 rounded-3xl border border-stone-100 shadow-sm"
                   >
                     <h2 className="font-heading text-2xl text-adriatic-blue mb-2">
                       {language === 'it' ? 'Tocchi Speciali' : 'Special Touches'}
@@ -551,14 +566,14 @@ const BookingPage = () => {
                             key={upsell.id}
                             type="button"
                             onClick={() => toggleUpsell(upsell.id)}
-                            className={`p-5 flex items-start gap-4 text-left transition-all duration-300 rounded-xl border relative group ${
+                            className={`p-5 flex items-start gap-4 text-left transition-all duration-300 rounded-2xl border relative group ${
                               isSelected 
-                                ? 'border-antique-gold bg-antique-gold/5 shadow-sm ring-1 ring-antique-gold' 
+                                ? 'border-orange-400 bg-orange-50/50 shadow-sm ring-1 ring-orange-400' 
                                 : 'border-stone-200 hover:border-adriatic-blue/40 hover:bg-stone-50'
                             }`}
                           >
-                            <div className={`w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-colors ${isSelected ? 'bg-antique-gold text-white' : 'bg-stone-100 text-stone-500 group-hover:text-adriatic-blue'}`}>
-                                <IconComponent className="w-5 h-5" />
+                            <div className={`w-12 h-12 flex items-center justify-center rounded-full shrink-0 transition-colors ${isSelected ? 'bg-orange-500 text-white' : 'bg-stone-100 text-stone-500 group-hover:text-adriatic-blue'}`}>
+                                <IconComponent className="w-6 h-6" />
                             </div>
                             
                             <div className="flex-1">
@@ -566,7 +581,7 @@ const BookingPage = () => {
                                     <h3 className={`font-medium text-base ${isSelected ? 'text-adriatic-blue' : 'text-gray-700'}`}>
                                         {language === 'it' ? upsell.title_it : upsell.title_en}
                                     </h3>
-                                    <span className="text-antique-gold font-bold text-sm whitespace-nowrap ml-2">+ €{upsell.price}</span>
+                                    <span className="text-orange-500 font-bold text-sm whitespace-nowrap ml-2">+ €{upsell.price}</span>
                                 </div>
                                 <p className="text-stone-500 text-xs mt-1 leading-relaxed line-clamp-2 group-hover:line-clamp-none transition-all">
                                     {language === 'it' ? upsell.description_it : upsell.description_en}
@@ -587,7 +602,7 @@ const BookingPage = () => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-white p-8 rounded-2xl border border-stone-100 shadow-xl sticky top-24"
+                className="bg-white p-8 rounded-3xl border border-stone-100 shadow-xl sticky top-24"
               >
                 <SummaryContent 
                     language={language}
@@ -618,14 +633,14 @@ const BookingPage = () => {
                 initial={{ y: 100 }}
                 animate={{ y: 0 }}
                 exit={{ y: 100 }}
-                className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 p-4 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-50 lg:hidden flex items-center justify-between gap-4"
+                className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-200 p-4 shadow-[0_-5px_30px_rgba(0,0,0,0.1)] z-50 lg:hidden flex items-center justify-between gap-4"
             >
                 <div className="flex flex-col">
-                    <span className="text-xs text-stone-500 uppercase tracking-wider">
-                        {nights > 0 ? `Totale per ${nights} notti` : 'Totale stimato'}
+                    <span className="text-[10px] text-stone-500 uppercase tracking-wider font-bold">
+                        {nights > 0 ? `Totale (${nights} notti)` : 'Stima'}
                     </span>
-                    <span className="font-heading text-2xl text-adriatic-blue">
-                        €{totalPrice > 0 ? totalPrice.toFixed(2) : (selectedRoomData?.price_per_night || 0)}
+                    <span className="font-heading text-2xl text-adriatic-blue leading-none mt-1">
+                        €{totalPrice > 0 ? totalPrice.toFixed(0) : (selectedRoomData?.price_per_night || 0)}
                     </span>
                 </div>
                 
@@ -639,7 +654,7 @@ const BookingPage = () => {
                     }
                   }}
                   disabled={submitting}
-                  className="bg-antique-gold text-white px-6 h-12 rounded-xl font-bold uppercase tracking-widest shadow-lg"
+                  className="bg-adriatic-blue text-white hover:bg-orange-500 px-6 h-12 rounded-xl font-bold uppercase text-sm tracking-widest shadow-lg transition-colors"
                 >
                   {submitting ? <Loader2 className="animate-spin" /> : (
                       <span className="flex items-center gap-2">
@@ -664,26 +679,29 @@ const SummaryContent = ({ language, t, selectedRoomData, dateRange, nights, room
         {selectedRoomData ? (
             <div className="space-y-4 pb-6 border-b border-stone-100">
             <div className="flex justify-between items-start">
-                <span className="text-stone-500 text-sm">{language === 'it' ? 'Stanza' : 'Room'}</span>
-                <span className="text-adriatic-blue font-bold text-right pl-4 text-sm">
+                <span className="text-stone-500 text-sm font-medium uppercase tracking-wide">{language === 'it' ? 'Stanza' : 'Room'}</span>
+                <span className="text-adriatic-blue font-bold text-right pl-4 text-base">
                 {language === 'it' ? selectedRoomData.name_it : selectedRoomData.name_en}
                 </span>
             </div>
             {dateRange.from && dateRange.to && (
-                <>
-                <div className="flex justify-between text-sm">
-                    <span className="text-stone-500">Check-in</span>
-                    <span className="text-adriatic-blue">{format(dateRange.from, 'dd MMM yyyy')}</span>
+                <div className="bg-stone-50 p-3 rounded-lg flex justify-between items-center text-sm">
+                    <div className="text-center">
+                        <span className="block text-xs text-stone-400 uppercase">Check-in</span>
+                        <span className="font-bold text-stone-700">{format(dateRange.from, 'dd MMM')}</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-stone-300" />
+                    <div className="text-center">
+                        <span className="block text-xs text-stone-400 uppercase">Check-out</span>
+                        <span className="font-bold text-stone-700">{format(dateRange.to, 'dd MMM')}</span>
+                    </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                    <span className="text-stone-500">Check-out</span>
-                    <span className="text-adriatic-blue">{format(dateRange.to, 'dd MMM yyyy')}</span>
-                </div>
-                </>
             )}
             </div>
         ) : (
-            <p className="text-stone-400 italic text-sm mb-6">Seleziona una stanza per vedere i dettagli.</p>
+            <p className="text-stone-400 italic text-sm mb-6 bg-stone-50 p-4 rounded-xl text-center">
+                Seleziona una stanza per iniziare.
+            </p>
         )}
 
         {selectedRoomData && nights > 0 && (
@@ -692,18 +710,18 @@ const SummaryContent = ({ language, t, selectedRoomData, dateRange, nights, room
                 <span className="text-stone-500">
                 {nights} {t('booking.nights')} x €{(roomPrice / nights).toFixed(0)}
                 </span>
-                <span className="text-adriatic-blue">€{roomPrice.toFixed(2)}</span>
+                <span className="text-adriatic-blue font-medium">€{roomPrice.toFixed(2)}</span>
             </div>
             
             {selectedUpsells.length > 0 && (
-                <div className="py-2 space-y-2">
+                <div className="py-3 space-y-2 border-t border-dashed border-stone-200 mt-2">
                 {selectedUpsells.map(upsellId => {
                     const upsell = upsells.find(u => u.id === upsellId);
                     if (!upsell) return null;
                     return (
                     <div key={upsellId} className="flex justify-between text-sm text-stone-600">
                         <span className="truncate pr-2 flex items-center gap-1">
-                           <Sparkles className="w-3 h-3 text-antique-gold" />
+                           <Sparkles className="w-3 h-3 text-orange-400" />
                            {language === 'it' ? upsell.title_it : upsell.title_en}
                         </span>
                         <span>+€{upsell.price.toFixed(2)}</span>
@@ -714,19 +732,19 @@ const SummaryContent = ({ language, t, selectedRoomData, dateRange, nights, room
             )}
             
             {discountAmount > 0 && (
-                <div className="flex justify-between text-sm text-green-600 bg-green-50 p-2 rounded-lg">
-                <span>
-                    {language === 'it' ? 'Sconto' : 'Discount'}
+                <div className="flex justify-between text-sm text-green-700 bg-green-50 p-3 rounded-xl border border-green-100 mt-2">
+                <span className="font-bold flex items-center gap-2">
+                    <Check className="w-4 h-4" /> {language === 'it' ? 'Sconto' : 'Discount'}
                 </span>
                 <span>-€{discountAmount.toFixed(2)}</span>
                 </div>
             )}
             
-            <div className="flex justify-between items-end pt-6 border-t border-stone-100 mt-4">
-                <span className="font-heading text-adriatic-blue text-lg">{t('booking.total')}</span>
+            <div className="flex justify-between items-end pt-6 border-t-2 border-stone-100 mt-6">
+                <span className="font-heading text-adriatic-blue text-xl">{t('booking.total')}</span>
                 <div className="text-right">
-                    <span className="font-heading text-antique-gold text-3xl block leading-none">€{totalPrice.toFixed(2)}</span>
-                    <span className="text-[10px] text-stone-400 uppercase tracking-wider">Tasse incluse</span>
+                    <span className="font-heading text-orange-500 text-4xl block leading-none">€{totalPrice.toFixed(2)}</span>
+                    <span className="text-[10px] text-stone-400 uppercase tracking-wider font-bold">Tutto incluso</span>
                 </div>
             </div>
             </div>
@@ -736,7 +754,7 @@ const SummaryContent = ({ language, t, selectedRoomData, dateRange, nights, room
             type="submit"
             form="booking-form"
             disabled={disabled}
-            className="w-full mt-8 bg-antique-gold text-white hover:bg-adriatic-blue py-6 text-sm uppercase tracking-widest disabled:opacity-50 shadow-lg hover:shadow-xl transition-all rounded-xl font-bold"
+            className="w-full mt-8 bg-adriatic-blue text-white hover:bg-orange-500 py-6 text-sm uppercase tracking-widest disabled:opacity-50 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-xl font-bold"
         >
             {submitting ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -748,18 +766,11 @@ const SummaryContent = ({ language, t, selectedRoomData, dateRange, nights, room
             )}
         </Button>
 
-        <p className="text-xs text-stone-400 text-center mt-4 flex items-center justify-center gap-1">
-            <Lock size={12} />
-            {language === 'it' ? 'Pagamento sicuro' : 'Secure payment'}
-        </p>
+        <div className="mt-6 flex items-center justify-center gap-2 text-stone-400 opacity-60">
+             <Lock size={14} />
+             <span className="text-[10px] uppercase tracking-widest">{language === 'it' ? 'Pagamento sicuro SSL' : 'SSL Secure Payment'}</span>
+        </div>
     </>
-);
-
-const Lock = ({ size }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-  </svg>
 );
 
 export default BookingPage;
