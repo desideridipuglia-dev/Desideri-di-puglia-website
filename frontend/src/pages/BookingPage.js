@@ -248,16 +248,15 @@ const BookingPage = () => {
       {/* --- CSS FORCE WHATSAPP UP --- */}
       <style>{`
         @media (max-width: 768px) {
-          /* Intercetta quasi tutti i widget di chat noti */
           [class*="eapps-widget"],
           [class*="whatsapp"],
           #whatsapp-widget,
           .wa-chat-widget,
           div[id^="wa"],
           a[href*="wa.me"] {
-            bottom: 120px !important; /* Spinta verso l'alto obbligatoria */
+            bottom: 120px !important;
             transition: bottom 0.3s ease;
-            z-index: 40 !important; /* Sotto la nostra barra se necessario, o sopra ma spostato */
+            z-index: 40 !important;
           }
         }
       `}</style>
@@ -439,7 +438,9 @@ const BookingPage = () => {
                             <div className={`w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-colors ${isSelected ? 'bg-antique-gold text-white' : 'bg-stone-100 text-stone-400 group-hover:text-adriatic-blue'}`}><IconComponent className="w-5 h-5" /></div>
                             <div className="flex-1">
                                 <div className="flex justify-between items-start"><h3 className={`font-medium text-base ${isSelected ? 'text-adriatic-blue' : 'text-stone-600'}`}>{language === 'it' ? upsell.title_it : upsell.title_en}</h3><span className="text-antique-gold font-bold text-xs whitespace-nowrap ml-2">+ €{upsell.price}</span></div>
-                                <p className="text-stone-400 text-xs mt-1 leading-relaxed line-clamp-2">{language === 'it' ? upsell.description_it : upsell.description_en}</p>
+                                <p className={`text-xs mt-1 leading-relaxed transition-all duration-300 ${isSelected ? 'text-stone-600 line-clamp-none' : 'text-stone-400 line-clamp-2'}`}>
+                                    {language === 'it' ? upsell.description_it : upsell.description_en}
+                                </p>
                             </div>
                           </button>
                         );
@@ -522,7 +523,7 @@ const BookingPage = () => {
         </div>
       </section>
 
-      {/* --- MOBILE STICKY BAR: DESIGN "ISLAND" + LOGICA VISIBILITÀ --- */}
+      {/* --- MOBILE STICKY BAR --- */}
       <AnimatePresence>
         {selectedRoom && dateRange.from && dateRange.to && (
             <motion.div 
@@ -542,13 +543,7 @@ const BookingPage = () => {
                 
                 <Button 
                   onClick={(e) => { 
-                      // Se mancano le date, scrolla al calendario (anche se la barra non dovrebbe apparire senza date, sicurezza in più)
-                      if (!dateRange.from || !dateRange.to) { 
-                          document.getElementById('booking-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
-                          toast.info(language === 'it' ? 'Seleziona le date' : 'Select dates'); 
-                      } else { 
-                          handleSubmit(e); 
-                      } 
+                      handleSubmit(e); 
                   }} 
                   disabled={submitting} 
                   className="bg-antique-gold text-adriatic-blue hover:bg-white px-6 h-12 rounded-xl font-bold uppercase text-xs tracking-widest shadow-lg transition-all duration-300"
