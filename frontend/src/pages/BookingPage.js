@@ -199,7 +199,6 @@ const BookingPage = () => {
       return;
     }
 
-    // MODIFICA: Controllo anche il numero di telefono
     if (!formData.guest_name || !formData.guest_email || !formData.guest_phone) {
       toast.error(language === 'it' ? 'Compila tutti i campi obbligatori (incluso il telefono)' : 'Please fill all required fields (including phone)');
       return;
@@ -212,7 +211,7 @@ const BookingPage = () => {
         room_id: selectedRoom,
         guest_name: formData.guest_name,
         guest_email: formData.guest_email,
-        guest_phone: formData.guest_phone, // Invia il telefono
+        guest_phone: formData.guest_phone,
         check_in: format(dateRange.from, 'yyyy-MM-dd'),
         check_out: format(dateRange.to, 'yyyy-MM-dd'),
         num_guests: parseInt(formData.num_guests),
@@ -306,7 +305,9 @@ const BookingPage = () => {
                           )}
                           <h3 className={`font-heading text-lg ${isSelected ? 'text-antique-gold' : 'text-adriatic-blue'}`}>{roomName}</h3>
                           <p className="text-muted-foreground text-sm mt-1">Max {room.max_guests} {t('booking.guests')}</p>
-                          <p className="text-antique-gold font-medium mt-2 text-lg">€{room.price_per_night} <span className="text-xs text-muted-foreground">{t('rooms.perNight')}</span></p>
+                          
+                          {/* PREZZO RIMOSSO QUI - Ora è solo nel riepilogo a destra */}
+                          
                         </button>
                       );
                     })}
@@ -384,7 +385,6 @@ const BookingPage = () => {
                       />
                     </div>
                     <div>
-                      {/* MODIFICA: Telefono reso obbligatorio con asterisco */}
                       <Label htmlFor="guest_phone">{t('booking.phone')} *</Label>
                       <Input
                         id="guest_phone"
@@ -490,7 +490,7 @@ const BookingPage = () => {
                   </div>
                 </motion.div>
                 
-                {/* Upsells Section - MODIFICATA */}
+                {/* Upsells Section */}
                 {nights > 0 && availableUpsells.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -507,7 +507,6 @@ const BookingPage = () => {
                         : 'Add exclusive experiences to your stay'}
                     </p>
                     
-                    {/* Grid degli Upsell */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {availableUpsells.map((upsell) => {
                         const IconComponent = UPSELL_ICONS[upsell.icon] || Gift;
@@ -518,7 +517,6 @@ const BookingPage = () => {
                             key={upsell.id}
                             type="button"
                             onClick={() => toggleUpsell(upsell.id)}
-                            // MODIFICA: h-full per altezza uguale, rimosso overflow hidden che tagliava
                             className={`p-5 text-left transition-all duration-300 relative h-full flex flex-col justify-start group hover:shadow-md ${
                               isSelected 
                                 ? 'border-2 border-antique-gold bg-antique-gold/5' 
@@ -544,7 +542,6 @@ const BookingPage = () => {
                               </div>
                             </div>
                             
-                            {/* MODIFICA: Rimosso line-clamp, ora il testo va a capo liberamente */}
                             <div className="pt-2 mt-auto w-full">
                                 <p className="text-muted-foreground text-sm leading-relaxed">
                                   {language === 'it' ? upsell.description_it : upsell.description_en}
