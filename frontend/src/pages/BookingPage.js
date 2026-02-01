@@ -243,13 +243,25 @@ const BookingPage = () => {
   }
 
   return (
-    <div data-testid="booking-page" className="min-h-screen bg-stone-50 pt-20 pb-32 lg:pb-0 font-sans">
+    <div data-testid="booking-page" className="min-h-screen bg-stone-50 pt-20 pb-40 lg:pb-0 font-sans">
       
+      {/* --- FIX PER WHATSAPP: Alza il widget solo su mobile --- */}
+      <style>{`
+        @media (max-width: 768px) {
+          /* Target generico per widget comuni come Elfsight o custom */
+          [class*="eapps-widget-floating-button"], 
+          .elfsight-app-whatsapp-chat,
+          #whatsapp-widget,
+          .wa-chat-widget {
+            bottom: 110px !important; /* Lo spinge sopra la nostra barra */
+            transition: bottom 0.3s ease;
+          }
+        }
+      `}</style>
+
       {/* Header Immersivo */}
       <section className="relative py-20 md:py-28 overflow-hidden bg-adriatic-blue">
-        {/* Background Pattern/Image opzionale */}
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/concrete-wall.png')] opacity-10 mix-blend-overlay"></div>
-        
         <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 text-center text-white">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <p className="font-accent text-antique-gold text-xs md:text-sm tracking-[0.4em] uppercase mb-4">Desideri di Puglia</p>
@@ -259,7 +271,7 @@ const BookingPage = () => {
         </div>
       </section>
 
-      {/* Trust Bar (WOOW FACTOR 1: Rassicurazione) */}
+      {/* Trust Bar */}
       <div className="bg-white border-b border-stone-100 py-4 hidden md:block">
           <div className="max-w-7xl mx-auto px-12 flex justify-center gap-12 text-stone-500 text-xs uppercase tracking-widest font-medium">
               <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-antique-gold" /> {language === 'it' ? 'Miglior Tariffa Garantita' : 'Best Rate Guaranteed'}</div>
@@ -272,7 +284,7 @@ const BookingPage = () => {
         <div className="max-w-7xl mx-auto px-4 md:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             
-            {/* LEFT COLUMN: Form */}
+            {/* LEFT COLUMN */}
             <div className="lg:col-span-8 space-y-10">
               <form onSubmit={handleSubmit} id="booking-form" className="space-y-12">
                 
@@ -435,10 +447,9 @@ const BookingPage = () => {
               </form>
             </div>
 
-            {/* RIGHT COLUMN: RIEPILOGO VISIVO (WOOW FACTOR 2) */}
+            {/* RIGHT COLUMN */}
             <div className="hidden lg:block lg:col-span-4">
               <div className="bg-white p-0 rounded-2xl border border-stone-100 shadow-2xl sticky top-24 overflow-hidden">
-                {/* Immagine Stanza Selezionata nel Carrello */}
                 <div className="h-48 bg-stone-200 relative">
                     {selectedRoomData ? (
                         <>
@@ -508,13 +519,41 @@ const BookingPage = () => {
         </div>
       </section>
 
-      {/* MOBILE STICKY BAR */}
+      {/* --- MOBILE STICKY BAR: DESIGN "ISLAND" --- */}
       <AnimatePresence>
         {selectedRoom && (
-            <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }} className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-200 p-4 shadow-[0_-5px_30px_rgba(0,0,0,0.1)] z-50 lg:hidden flex items-center justify-between gap-4">
-                <div className="flex flex-col"><span className="text-[10px] text-stone-400 uppercase tracking-wider font-bold">{nights > 0 ? `Totale (${nights} notti)` : 'Totale'}</span><span className="font-heading text-xl text-antique-gold leading-none mt-1">€{totalPrice > 0 ? totalPrice.toFixed(0) : (selectedRoomData?.price_per_night || 0)}</span></div>
-                <Button onClick={(e) => { if (!dateRange.from || !dateRange.to) { document.getElementById('booking-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); toast.info(language === 'it' ? 'Seleziona le date' : 'Select dates'); } else { handleSubmit(e); } }} disabled={submitting} className="bg-adriatic-blue text-white hover:bg-antique-gold px-6 h-12 rounded-none font-bold uppercase text-xs tracking-widest shadow-lg transition-colors duration-500">
-                  {submitting ? <Loader2 className="animate-spin" /> : <span className="flex items-center gap-2">{t('booking.proceed')} <ArrowRight className="w-4 h-4" /></span>}
+            <motion.div 
+                initial={{ y: 100 }} 
+                animate={{ y: 0 }} 
+                exit={{ y: 100 }} 
+                className="fixed bottom-6 left-4 right-4 bg-adriatic-blue text-white p-4 rounded-2xl shadow-2xl z-50 lg:hidden flex items-center justify-between border border-white/10"
+            >
+                <div className="flex flex-col">
+                    <span className="text-[9px] text-white/60 uppercase tracking-widest font-medium mb-1">
+                        {nights > 0 ? `Totale (${nights} notti)` : 'Totale stimato'}
+                    </span>
+                    <span className="font-heading text-2xl text-antique-gold leading-none">
+                        €{totalPrice > 0 ? totalPrice.toFixed(0) : (selectedRoomData?.price_per_night || 0)}
+                    </span>
+                </div>
+                
+                <Button 
+                  onClick={(e) => { 
+                      if (!dateRange.from || !dateRange.to) { 
+                          document.getElementById('booking-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+                          toast.info(language === 'it' ? 'Seleziona le date' : 'Select dates'); 
+                      } else { 
+                          handleSubmit(e); 
+                      } 
+                  }} 
+                  disabled={submitting} 
+                  className="bg-antique-gold text-adriatic-blue hover:bg-white px-6 h-12 rounded-xl font-bold uppercase text-xs tracking-widest shadow-lg transition-all duration-300"
+                >
+                  {submitting ? <Loader2 className="animate-spin" /> : (
+                      <span className="flex items-center gap-2">
+                          {t('booking.proceed')} <ArrowRight className="w-4 h-4" />
+                      </span>
+                  )}
                 </Button>
             </motion.div>
         )}
