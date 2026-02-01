@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion'; // Aggiunto AnimatePresence
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
 import { Calendar } from '../components/ui/calendar';
@@ -12,19 +12,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { format, differenceInDays, addDays, isBefore, isSameDay } from 'date-fns';
 import { it, enUS } from 'date-fns/locale';
-import { ArrowRight, Loader2, Wine, Grape, Anchor, ShoppingBasket, Sparkles, Coffee, Gift, Check, Phone, X } from 'lucide-react';
+import { ArrowRight, Loader2, Wine, Grape, Anchor, ShoppingBasket, Sparkles, Coffee, Gift, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // INDIRIZZO BACKEND
 const API = "https://desideri-backend.onrender.com/api";
 
-// Helper per immagini (lo stesso usato altrove)
 const getOptimizedUrl = (url) => {
   if (!url) return "";
   if (url.includes("images.unsplash.com")) {
      const baseUrl = url.split('?')[0];
-     return `${baseUrl}?q=80&w=200&auto=format&fit=crop`; // Low res per thumbnail
+     return `${baseUrl}?q=80&w=300&auto=format&fit=crop`; // Risoluzione leggermente più alta
   }
-  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=200&q=80&output=webp`;
+  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=300&q=80&output=webp`;
 };
 
 // Icon mapping for upsells
@@ -76,7 +75,6 @@ const BookingPage = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        console.log(`Fetching data from: ${API}`);
         const [roomsRes, reasonsRes, upsellsRes] = await Promise.all([
           axios.get(`${API}/rooms`),
           axios.get(`${API}/stay-reasons`),
@@ -114,14 +112,12 @@ const BookingPage = () => {
       }
     };
     fetchAvailability();
-    // Reset selected upsells when room changes
     setSelectedUpsells([]);
   }, [selectedRoom]);
 
   const selectedRoomData = rooms.find(r => r.id === selectedRoom);
   const nights = dateRange.from && dateRange.to ? differenceInDays(dateRange.to, dateRange.from) : 0;
   
-  // Calculate room price with dynamic pricing
   const calculateRoomPrice = () => {
     if (!selectedRoomData || !dateRange.from || !dateRange.to) return 0;
     
@@ -141,7 +137,6 @@ const BookingPage = () => {
   
   const roomPrice = calculateRoomPrice();
   
-  // Calculate upsells total
   const upsellsTotal = selectedUpsells.reduce((sum, upsellId) => {
     const upsell = upsells.find(u => u.id === upsellId);
     return sum + (upsell?.price || 0);
@@ -149,7 +144,6 @@ const BookingPage = () => {
   
   const subtotal = roomPrice + upsellsTotal;
   
-  // Calculate discount (only on room price, not upsells)
   let discountAmount = 0;
   if (couponDiscount && couponStatus === 'valid') {
     if (couponDiscount.discount_type === 'percentage') {
@@ -160,7 +154,6 @@ const BookingPage = () => {
   }
   const totalPrice = subtotal - discountAmount;
   
-  // Filter upsells based on min_nights
   const availableUpsells = upsells.filter(upsell => upsell.min_nights <= nights);
   
   const toggleUpsell = (upsellId) => {
@@ -174,8 +167,6 @@ const BookingPage = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Reset coupon status when code changes
     if (name === 'coupon_code') {
       setCouponStatus(null);
       setCouponDiscount(null);
@@ -184,7 +175,6 @@ const BookingPage = () => {
   
   const validateCoupon = async () => {
     if (!formData.coupon_code) return;
-    
     try {
       const response = await axios.get(`${API}/coupons/validate/${formData.coupon_code}?nights=${nights}`);
       setCouponStatus('valid');
@@ -203,19 +193,15 @@ const BookingPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!selectedRoom || !dateRange.from || !dateRange.to) {
       toast.error(t('booking.selectDates'));
       return;
     }
-
     if (!formData.guest_name || !formData.guest_email || !formData.guest_phone) {
-      toast.error(language === 'it' ? 'Compila tutti i campi obbligatori (incluso il telefono)' : 'Please fill all required fields (including phone)');
+      toast.error(language === 'it' ? 'Compila tutti i campi obbligatori' : 'Please fill required fields');
       return;
     }
-
     setSubmitting(true);
-
     try {
       const bookingData = {
         room_id: selectedRoom,
@@ -233,12 +219,10 @@ const BookingPage = () => {
       };
 
       const response = await axios.post(`${API}/bookings`, bookingData);
-      
       if (response.data.checkout_url) {
         window.location.href = response.data.checkout_url;
       }
     } catch (error) {
-      console.error('Booking error:', error);
       toast.error(error.response?.data?.detail || t('common.error'));
       setSubmitting(false);
     }
@@ -255,7 +239,7 @@ const BookingPage = () => {
   }
 
   return (
-    <div data-testid="booking-page" className="min-h-screen bg-stone-50 pt-20 pb-32 lg:pb-0"> {/* Aggiunto padding bottom per mobile bar */}
+    <div data-testid="booking-page" className="min-h-screen bg-stone-50 pt-20 pb-32 lg:pb-0">
       
       {/* Header */}
       <section className="py-16 md:py-24 bg-adriatic-blue">
@@ -282,22 +266,22 @@ const BookingPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             
             {/* LEFT COLUMN: Form */}
-            <div className="lg:col-span-8 space-y-8">
-              <form onSubmit={handleSubmit} id="booking-form" className="space-y-8">
+            <div className="lg:col-span-8 space-y-10">
+              <form onSubmit={handleSubmit} id="booking-form" className="space-y-10">
                 
-                {/* 1. Room Selection - VISUAL IMPROVED */}
+                {/* 1. Room Selection - LARGER CARDS */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
                   className="bg-white p-6 md:p-8 rounded-2xl border border-stone-100 shadow-sm"
                 >
-                  <h2 className="font-heading text-2xl text-adriatic-blue mb-6 flex items-center gap-3">
+                  <h2 className="font-heading text-2xl text-adriatic-blue mb-8 flex items-center gap-3">
                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-antique-gold/10 text-antique-gold text-sm font-bold">1</span>
                     {language === 'it' ? 'Seleziona la stanza' : 'Select Room'}
                   </h2>
                   
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="flex flex-col gap-6">
                     {rooms.map((room) => {
                       const roomName = language === 'it' ? room.name_it : room.name_en;
                       const isSelected = selectedRoom === room.id;
@@ -308,35 +292,36 @@ const BookingPage = () => {
                           key={room.id}
                           type="button"
                           onClick={() => setSelectedRoom(room.id)}
-                          className={`group flex items-center gap-4 p-3 pr-6 text-left transition-all duration-300 rounded-xl border relative overflow-hidden ${
+                          // Padding aumentato (p-5), bordo più spesso su selezione
+                          className={`group flex items-center gap-6 p-5 text-left transition-all duration-300 rounded-2xl border relative overflow-hidden ${
                             isSelected 
-                              ? 'border-antique-gold bg-antique-gold/5 shadow-md' 
-                              : 'border-stone-200 hover:border-adriatic-blue/50 hover:shadow-sm bg-white'
+                              ? 'border-2 border-antique-gold bg-antique-gold/5 shadow-md scale-[1.01]' 
+                              : 'border border-stone-200 hover:border-adriatic-blue/30 hover:shadow-lg bg-white'
                           }`}
                           data-testid={`select-room-${room.id}`}
                         >
-                          {/* Thumbnail Image */}
-                          <div className="w-20 h-20 md:w-24 md:h-24 shrink-0 rounded-lg overflow-hidden bg-stone-200">
+                          {/* Thumbnail Image Larger */}
+                          <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 rounded-xl overflow-hidden bg-stone-200 shadow-inner">
                              {thumbUrl && (
-                                <img src={thumbUrl} alt={roomName} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                <img src={thumbUrl} alt={roomName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
                              )}
                           </div>
 
-                          <div className="flex-1 min-w-0">
-                            <h3 className={`font-heading text-lg md:text-xl truncate ${isSelected ? 'text-adriatic-blue' : 'text-gray-700'}`}>
+                          <div className="flex-1 min-w-0 py-1">
+                            <h3 className={`font-heading text-xl md:text-2xl truncate mb-2 ${isSelected ? 'text-adriatic-blue' : 'text-stone-700'}`}>
                                 {roomName}
                             </h3>
-                            <p className="text-stone-500 text-sm mt-1 flex items-center gap-1">
-                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-antique-gold"></span>
+                            <p className="text-stone-500 text-sm md:text-base flex items-center gap-2 font-light">
+                                <span className={`inline-block w-2 h-2 rounded-full ${isSelected ? 'bg-antique-gold' : 'bg-stone-300'}`}></span>
                                 Max {room.max_guests} {t('booking.guests')}
                             </p>
                           </div>
 
                           {/* Selection Indicator */}
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                              isSelected ? 'border-antique-gold bg-antique-gold' : 'border-stone-300'
+                          <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                              isSelected ? 'border-antique-gold bg-antique-gold' : 'border-stone-300 group-hover:border-adriatic-blue'
                           }`}>
-                              {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                              {isSelected && <Check className="w-5 h-5 text-white" />}
                           </div>
                         </button>
                       );
@@ -344,58 +329,88 @@ const BookingPage = () => {
                   </div>
                 </motion.div>
 
-                {/* 2. Date Selection */}
+                {/* 2. Date Selection - VINTAGE CALENDAR */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
                   className="bg-white p-6 md:p-8 rounded-2xl border border-stone-100 shadow-sm"
                 >
-                  <h2 className="font-heading text-2xl text-adriatic-blue mb-6 flex items-center gap-3">
+                  <h2 className="font-heading text-2xl text-adriatic-blue mb-8 flex items-center gap-3">
                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-antique-gold/10 text-antique-gold text-sm font-bold">2</span>
                     {t('booking.selectDates')}
                   </h2>
                   
-                  <div className="flex justify-center bg-stone-50/50 p-2 md:p-6 rounded-xl border border-stone-100">
-                    <Calendar
-                      mode="range"
-                      selected={dateRange}
-                      onSelect={setDateRange}
-                      numberOfMonths={window.innerWidth > 768 ? 2 : 1} // Adatta mesi per mobile
-                      locale={locale}
-                      disabled={isDateUnavailable}
-                      className="border-none bg-transparent"
-                      data-testid="booking-calendar"
-                    />
+                  {/* Container Calendario Vintage */}
+                  <div className="flex justify-center w-full">
+                    <div className="relative p-6 md:p-10 rounded-3xl bg-[#FFFDF5] border border-[#E5E0D0] shadow-[inset_0_0_40px_rgba(230,225,210,0.5)] max-w-md w-full">
+                        {/* Decorazioni Vintage */}
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-16 h-1 bg-[#E5E0D0] rounded-full opacity-50"></div>
+                        
+                        <Calendar
+                            mode="range"
+                            selected={dateRange}
+                            onSelect={setDateRange}
+                            numberOfMonths={1} // SINGLE MONTH VIEW
+                            pagedNavigation // Navigation arrows enabled
+                            locale={locale}
+                            disabled={isDateUnavailable}
+                            className="p-0 pointer-events-auto"
+                            classNames={{
+                                month: "space-y-6 w-full",
+                                caption: "flex justify-center pt-2 relative items-center mb-6",
+                                caption_label: "text-2xl font-heading text-adriatic-blue font-normal capitalize tracking-wide",
+                                nav: "space-x-1 flex items-center",
+                                nav_button: "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100 hover:bg-[#F0EBE0] rounded-full transition-all text-stone-600",
+                                nav_button_previous: "absolute left-1",
+                                nav_button_next: "absolute right-1",
+                                table: "w-full border-collapse space-y-1",
+                                head_row: "flex w-full justify-between mb-2",
+                                head_cell: "text-stone-400 rounded-md w-9 font-normal text-[0.8rem] uppercase tracking-widest font-sans",
+                                row: "flex w-full mt-2 justify-between",
+                                cell: "h-10 w-10 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-full [&:has([aria-selected].day-outside)]:bg-transparent [&:has([aria-selected])]:bg-antique-gold/10 first:[&:has([aria-selected])]:rounded-l-full last:[&:has([aria-selected])]:rounded-r-full focus-within:relative focus-within:z-20",
+                                day: "h-10 w-10 p-0 font-normal text-stone-700 aria-selected:opacity-100 hover:bg-[#F0EBE0] rounded-full transition-colors font-sans",
+                                day_range_end: "day-range-end",
+                                day_selected: "bg-antique-gold text-white hover:bg-antique-gold hover:text-white shadow-md",
+                                day_today: "bg-stone-100 text-stone-900 border border-stone-200",
+                                day_outside: "text-stone-300 opacity-50",
+                                day_disabled: "text-stone-300 opacity-50 line-through decoration-stone-300",
+                                day_range_middle: "aria-selected:bg-antique-gold/20 aria-selected:text-stone-900 rounded-none",
+                                day_hidden: "invisible",
+                            }}
+                            data-testid="booking-calendar"
+                        />
+                    </div>
                   </div>
                 </motion.div>
 
-                {/* 3. Guest Details */}
+                {/* 3. Guest Details - More spacing */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
                   className="bg-white p-6 md:p-8 rounded-2xl border border-stone-100 shadow-sm"
                 >
-                   <h2 className="font-heading text-2xl text-adriatic-blue mb-6 flex items-center gap-3">
+                   <h2 className="font-heading text-2xl text-adriatic-blue mb-8 flex items-center gap-3">
                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-antique-gold/10 text-antique-gold text-sm font-bold">3</span>
                     {language === 'it' ? 'I tuoi dati' : 'Your Details'}
                   </h2>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="guest_name">{t('booking.name')} *</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* ... (Campi input con stile coerente) ... */}
+                    <div className="space-y-3">
+                      <Label htmlFor="guest_name" className="text-stone-600">{t('booking.name')} *</Label>
                       <Input
                         id="guest_name"
                         name="guest_name"
                         value={formData.guest_name}
                         onChange={handleInputChange}
                         required
-                        className="h-12 rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold"
+                        className="h-12 rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold bg-stone-50/30"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="guest_email">{t('booking.email')} *</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="guest_email" className="text-stone-600">{t('booking.email')} *</Label>
                       <Input
                         id="guest_email"
                         name="guest_email"
@@ -403,11 +418,11 @@ const BookingPage = () => {
                         value={formData.guest_email}
                         onChange={handleInputChange}
                         required
-                        className="h-12 rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold"
+                        className="h-12 rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold bg-stone-50/30"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="guest_phone">{t('booking.phone')} *</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="guest_phone" className="text-stone-600">{t('booking.phone')} *</Label>
                       <Input
                         id="guest_phone"
                         name="guest_phone"
@@ -416,16 +431,16 @@ const BookingPage = () => {
                         onChange={handleInputChange}
                         required
                         placeholder="+39 ..."
-                        className="h-12 rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold"
+                        className="h-12 rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold bg-stone-50/30"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="num_guests">{t('booking.guests')}</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="num_guests" className="text-stone-600">{t('booking.guests')}</Label>
                       <Select
                         value={String(formData.num_guests)}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, num_guests: parseInt(value) }))}
                       >
-                        <SelectTrigger className="h-12 rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold">
+                        <SelectTrigger className="h-12 rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold bg-stone-50/30">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -439,21 +454,21 @@ const BookingPage = () => {
                       </Select>
                     </div>
                     
-                    <div className="md:col-span-2 space-y-2">
-                      <Label htmlFor="notes">{t('booking.notes')}</Label>
+                    <div className="md:col-span-2 space-y-3">
+                      <Label htmlFor="notes" className="text-stone-600">{t('booking.notes')}</Label>
                       <Textarea
                         id="notes"
                         name="notes"
                         value={formData.notes}
                         onChange={handleInputChange}
                         rows={3}
-                        className="rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold resize-none"
+                        className="rounded-lg border-stone-200 focus:border-antique-gold focus:ring-antique-gold bg-stone-50/30 resize-none"
                       />
                     </div>
 
                     {/* Stay Reason & Coupon */}
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-6 border-t border-stone-100">
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             <Label htmlFor="stay_reason" className="text-xs uppercase tracking-widest text-stone-500">
                                 {language === 'it' ? 'Occasione Speciale?' : 'Special Occasion?'}
                             </Label>
@@ -461,7 +476,7 @@ const BookingPage = () => {
                                 value={formData.stay_reason}
                                 onValueChange={(value) => setFormData(prev => ({ ...prev, stay_reason: value }))}
                             >
-                                <SelectTrigger className="h-10 rounded-lg border-stone-200 text-sm">
+                                <SelectTrigger className="h-11 rounded-lg border-stone-200 text-sm bg-stone-50/30">
                                 <SelectValue placeholder={language === 'it' ? 'Seleziona...' : 'Select...'} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -474,7 +489,7 @@ const BookingPage = () => {
                             </Select>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             <Label htmlFor="coupon_code" className="text-xs uppercase tracking-widest text-stone-500">
                                 {language === 'it' ? 'Hai un codice?' : 'Have a code?'}
                             </Label>
@@ -484,7 +499,7 @@ const BookingPage = () => {
                                 name="coupon_code"
                                 value={formData.coupon_code}
                                 onChange={handleInputChange}
-                                className={`h-10 rounded-lg uppercase text-sm ${
+                                className={`h-11 rounded-lg uppercase text-sm bg-stone-50/30 ${
                                     couponStatus === 'valid' ? 'border-green-500 text-green-700 bg-green-50' : 
                                     couponStatus === 'invalid' ? 'border-red-500 text-red-700 bg-red-50' : ''
                                 }`}
@@ -494,7 +509,7 @@ const BookingPage = () => {
                                 onClick={validateCoupon}
                                 disabled={!formData.coupon_code || nights === 0}
                                 variant="outline"
-                                className="h-10 px-4 border-stone-300"
+                                className="h-11 px-4 border-stone-300 hover:bg-stone-50"
                                 >
                                 {language === 'it' ? 'OK' : 'OK'}
                                 </Button>
@@ -520,7 +535,7 @@ const BookingPage = () => {
                     <h2 className="font-heading text-2xl text-adriatic-blue mb-2">
                       {language === 'it' ? 'Tocchi Speciali' : 'Special Touches'}
                     </h2>
-                    <p className="text-stone-500 text-sm mb-6 font-light">
+                    <p className="text-stone-500 text-sm mb-8 font-light">
                       {language === 'it' 
                         ? 'Personalizza il tuo arrivo con queste esperienze.' 
                         : 'Customize your arrival with these experiences.'}
@@ -536,7 +551,7 @@ const BookingPage = () => {
                             key={upsell.id}
                             type="button"
                             onClick={() => toggleUpsell(upsell.id)}
-                            className={`p-4 flex items-start gap-4 text-left transition-all duration-300 rounded-xl border relative group ${
+                            className={`p-5 flex items-start gap-4 text-left transition-all duration-300 rounded-xl border relative group ${
                               isSelected 
                                 ? 'border-antique-gold bg-antique-gold/5 shadow-sm ring-1 ring-antique-gold' 
                                 : 'border-stone-200 hover:border-adriatic-blue/40 hover:bg-stone-50'
@@ -548,7 +563,7 @@ const BookingPage = () => {
                             
                             <div className="flex-1">
                                 <div className="flex justify-between items-start">
-                                    <h3 className={`font-medium text-sm md:text-base ${isSelected ? 'text-adriatic-blue' : 'text-gray-700'}`}>
+                                    <h3 className={`font-medium text-base ${isSelected ? 'text-adriatic-blue' : 'text-gray-700'}`}>
                                         {language === 'it' ? upsell.title_it : upsell.title_en}
                                     </h3>
                                     <span className="text-antique-gold font-bold text-sm whitespace-nowrap ml-2">+ €{upsell.price}</span>
@@ -596,7 +611,7 @@ const BookingPage = () => {
         </div>
       </section>
 
-      {/* --- MOBILE STICKY BOTTOM BAR (New!) --- */}
+      {/* --- MOBILE STICKY BOTTOM BAR --- */}
       <AnimatePresence>
         {selectedRoom && (
             <motion.div 
@@ -616,7 +631,6 @@ const BookingPage = () => {
                 
                 <Button
                   onClick={(e) => {
-                    // Se non ci sono le date, scrolla al calendario, altrimenti submit
                     if (!dateRange.from || !dateRange.to) {
                         document.getElementById('booking-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         toast.info(language === 'it' ? 'Seleziona le date' : 'Select dates');
@@ -625,7 +639,7 @@ const BookingPage = () => {
                     }
                   }}
                   disabled={submitting}
-                  className="bg-antique-gold text-white px-8 h-12 rounded-xl font-bold uppercase tracking-widest shadow-lg"
+                  className="bg-antique-gold text-white px-6 h-12 rounded-xl font-bold uppercase tracking-widest shadow-lg"
                 >
                   {submitting ? <Loader2 className="animate-spin" /> : (
                       <span className="flex items-center gap-2">
@@ -641,7 +655,6 @@ const BookingPage = () => {
   );
 };
 
-// Componente estratto per pulizia (usato nella colonna destra desktop)
 const SummaryContent = ({ language, t, selectedRoomData, dateRange, nights, roomPrice, selectedUpsells, upsells, subtotal, discountAmount, couponDiscount, totalPrice, submitting, disabled }) => (
     <>
         <h2 className="font-heading text-2xl text-adriatic-blue mb-6 border-b border-stone-100 pb-4">
@@ -721,7 +734,7 @@ const SummaryContent = ({ language, t, selectedRoomData, dateRange, nights, room
 
         <Button
             type="submit"
-            form="booking-form" // Collega il bottone esterno al form
+            form="booking-form"
             disabled={disabled}
             className="w-full mt-8 bg-antique-gold text-white hover:bg-adriatic-blue py-6 text-sm uppercase tracking-widest disabled:opacity-50 shadow-lg hover:shadow-xl transition-all rounded-xl font-bold"
         >
@@ -742,7 +755,6 @@ const SummaryContent = ({ language, t, selectedRoomData, dateRange, nights, room
     </>
 );
 
-// Simple lock icon
 const Lock = ({ size }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
