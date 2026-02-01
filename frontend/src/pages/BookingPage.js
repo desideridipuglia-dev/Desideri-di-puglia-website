@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'; // Aggiunto useMemo
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { format, differenceInDays, addDays, isBefore, isSameDay } from 'date-fns';
 import { it, enUS } from 'date-fns/locale';
-import { ArrowRight, Loader2, Wine, Grape, Anchor, ShoppingBasket, Sparkles, Coffee, Gift, Check, Lock } from 'lucide-react';
+import { ArrowRight, Loader2, Wine, Grape, Anchor, ShoppingBasket, Sparkles, Coffee, Gift, Check, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const API = "https://desideri-backend.onrender.com/api";
 
@@ -35,15 +35,14 @@ const UPSELL_ICONS = {
   gift: Gift
 };
 
-// --- FIX CRITICO: Componente Giorno definito FUORI e MEMORIZZATO ---
-// Questo impedisce il re-rendering infinito e l'errore "Illegal constructor"
+// --- COMPONENTE GIORNO (ELEGANTE) ---
 const AnimatedDayContent = ({ date }) => {
   return (
     <div className="w-full h-full flex items-center justify-center relative z-10">
-        {/* Usiamo un div semplice o motion leggero senza props complesse */}
         <motion.span
-            whileHover={{ scale: 1.2 }}
-            transition={{ type: "spring", stiffness: 300 }}
+            whileHover={{ scale: 1.1 }}
+            transition={{ duration: 0.2 }}
+            className="font-sans" // Numeri puliti
         >
             {date.getDate()}
         </motion.span>
@@ -180,11 +179,11 @@ const BookingPage = () => {
       const response = await axios.get(`${API}/coupons/validate/${formData.coupon_code}?nights=${nights}`);
       setCouponStatus('valid');
       setCouponDiscount(response.data);
-      toast.success('Coupon applicato!');
+      toast.success(language === 'it' ? 'Coupon applicato!' : 'Coupon applied!');
     } catch (error) {
       setCouponStatus('invalid');
       setCouponDiscount(null);
-      toast.error('Coupon non valido');
+      toast.error(language === 'it' ? 'Coupon non valido' : 'Invalid coupon');
     }
   };
 
@@ -199,7 +198,7 @@ const BookingPage = () => {
       return;
     }
     if (!formData.guest_name || !formData.guest_email || !formData.guest_phone) {
-      toast.error('Compila tutti i campi obbligatori');
+      toast.error(language === 'it' ? 'Compila tutti i campi obbligatori' : 'Please fill required fields');
       return;
     }
     setSubmitting(true);
@@ -231,27 +230,28 @@ const BookingPage = () => {
 
   const locale = language === 'it' ? it : enUS;
 
-  // --- MEMOIZZAZIONE DELLE PROPS DEL CALENDARIO ---
-  // Questo è fondamentale per evitare che React ricrei l'oggetto components ad ogni render
+  // Memoizzazione per evitare crash
   const calendarComponents = useMemo(() => ({
     DayContent: AnimatedDayContent
   }), []);
 
   if (loading) {
       return (
-        <div className="min-h-screen pt-20 flex items-center justify-center bg-puglia-sand">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-adriatic-blue" />
+        <div className="min-h-screen pt-20 flex items-center justify-center bg-stone-50">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-antique-gold" />
         </div>
       );
   }
 
   return (
-    <div data-testid="booking-page" className="min-h-screen bg-stone-50 pt-20 pb-32 lg:pb-0">
-      <section className="py-16 md:py-24 bg-adriatic-blue">
+    <div data-testid="booking-page" className="min-h-screen bg-stone-50 pt-20 pb-32 lg:pb-0 font-sans">
+      
+      {/* Header */}
+      <section className="py-16 md:py-24 bg-adriatic-blue text-white">
         <div className="max-w-7xl mx-auto px-6 md:px-12 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <p className="font-accent text-antique-gold text-sm tracking-[0.3em] uppercase mb-4">Desideri di Puglia</p>
-            <h1 className="font-heading text-4xl md:text-6xl text-white">{t('booking.title')}</h1>
+            <h1 className="font-heading text-4xl md:text-6xl">{t('booking.title')}</h1>
             <p className="text-white/80 mt-4 font-light max-w-2xl mx-auto">{t('booking.subtitle')}</p>
           </motion.div>
         </div>
@@ -267,7 +267,7 @@ const BookingPage = () => {
                 {/* 1. SELEZIONE STANZA */}
                 <div className="bg-white p-6 md:p-8 rounded-3xl border border-stone-100 shadow-sm">
                   <h2 className="font-heading text-2xl text-adriatic-blue mb-8 flex items-center gap-3">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-600 text-sm font-bold">1</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-antique-gold/10 text-antique-gold text-sm font-bold">1</span>
                     {language === 'it' ? 'Seleziona la stanza' : 'Select Room'}
                   </h2>
                   <div className="flex flex-col gap-6">
@@ -280,73 +280,74 @@ const BookingPage = () => {
                           key={room.id}
                           type="button"
                           onClick={() => setSelectedRoom(room.id)}
-                          className={`group flex items-center gap-6 p-5 text-left transition-all duration-300 rounded-2xl border relative overflow-hidden ${
-                            isSelected ? 'border-2 border-orange-400 bg-orange-50/50 shadow-md scale-[1.01]' : 'border border-stone-200 hover:border-adriatic-blue/30 hover:shadow-lg bg-white'
+                          className={`group flex items-center gap-6 p-5 text-left transition-all duration-500 rounded-2xl border relative overflow-hidden ${
+                            isSelected ? 'border border-antique-gold bg-antique-gold/5 shadow-md' : 'border border-stone-200 hover:border-stone-300 hover:shadow-lg bg-white'
                           }`}
                         >
                           <div className="w-24 h-24 md:w-32 md:h-32 shrink-0 rounded-xl overflow-hidden bg-stone-200 shadow-inner">
-                             {thumbUrl && <img src={thumbUrl} alt={roomName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />}
+                             {thumbUrl && <img src={thumbUrl} alt={roomName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 ease-out" />}
                           </div>
                           <div className="flex-1 min-w-0 py-1">
-                            <h3 className={`font-heading text-xl md:text-2xl truncate mb-2 ${isSelected ? 'text-adriatic-blue' : 'text-stone-700'}`}>{roomName}</h3>
+                            <h3 className={`font-heading text-xl md:text-2xl truncate mb-2 ${isSelected ? 'text-antique-gold' : 'text-adriatic-blue'}`}>{roomName}</h3>
                             <p className="text-stone-500 text-sm md:text-base flex items-center gap-2 font-light">
-                                <span className={`inline-block w-2 h-2 rounded-full ${isSelected ? 'bg-orange-500' : 'bg-stone-300'}`}></span>
+                                <span className={`inline-block w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-antique-gold' : 'bg-stone-300'}`}></span>
                                 Max {room.max_guests} {t('booking.guests')}
                             </p>
                           </div>
-                          {isSelected && (
-                              <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
-                                  <Check className="w-5 h-5 text-white" />
-                              </div>
-                          )}
+                          <div className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all duration-500 ${
+                              isSelected ? 'border-antique-gold bg-antique-gold text-white' : 'border-stone-300 text-transparent group-hover:border-adriatic-blue'
+                          }`}>
+                              <Check className="w-4 h-4" />
+                          </div>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* 2. CALENDARIO FIXATO E OTTIMIZZATO */}
+                {/* 2. CALENDARIO ELEGANTE */}
                 <div className="bg-white p-6 md:p-8 rounded-3xl border border-stone-100 shadow-sm">
                   <h2 className="font-heading text-2xl text-adriatic-blue mb-8 flex items-center gap-3">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-teal-100 text-teal-700 text-sm font-bold">2</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-antique-gold/10 text-antique-gold text-sm font-bold">2</span>
                     {t('booking.selectDates')}
                   </h2>
                   <div className="flex justify-center w-full">
-                    <div className="relative p-2 md:p-4 max-w-lg w-full">
-                        <div className="relative bg-white/80 backdrop-blur-xl p-4 md:p-8 rounded-[2rem] border border-white shadow-xl">
-                            <Calendar
-                                mode="range"
-                                selected={dateRange}
-                                onSelect={setDateRange}
-                                numberOfMonths={1}
-                                pagedNavigation
-                                locale={locale}
-                                disabled={isDateUnavailable}
-                                className="p-0 pointer-events-auto"
-                                components={calendarComponents} // USA L'OGGETTO MEMORIZZATO
-                                classNames={{
-                                    month: "space-y-6 w-full",
-                                    caption: "flex justify-between items-center px-4 mb-6",
-                                    caption_label: "text-2xl font-heading text-adriatic-blue font-bold capitalize tracking-tight",
-                                    nav: "flex items-center gap-2",
-                                    nav_button: "h-9 w-9 bg-stone-100 hover:bg-orange-100 hover:text-orange-600 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
-                                    table: "w-full border-collapse",
-                                    head_row: "flex w-full justify-between mb-4 px-2",
-                                    head_cell: "text-stone-400 w-10 text-xs uppercase tracking-widest font-bold",
-                                    row: "flex w-full mt-2 justify-between",
-                                    cell: "h-10 w-10 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
-                                    day: "h-10 w-10 p-0 font-medium text-stone-600 hover:bg-stone-100 rounded-full transition-all duration-300",
-                                    day_selected: "bg-orange-500 text-white shadow-lg shadow-orange-500/30 scale-110 font-bold",
-                                    day_today: "bg-teal-50 text-teal-700 border border-teal-200 font-bold",
-                                    day_outside: "text-stone-300 opacity-50",
-                                    day_disabled: "text-stone-200 line-through opacity-40",
-                                    day_range_middle: "bg-orange-100 text-orange-700 rounded-none scale-100 !rounded-none mx-0 w-full",
-                                    day_range_start: "rounded-l-full rounded-r-none",
-                                    day_range_end: "rounded-r-full rounded-l-none",
-                                    day_hidden: "invisible",
-                                }}
-                            />
-                        </div>
+                    {/* Nessun effetto blob, solo pulizia */}
+                    <div className="relative w-full max-w-lg">
+                        <Calendar
+                            mode="range"
+                            selected={dateRange}
+                            onSelect={setDateRange}
+                            numberOfMonths={1}
+                            pagedNavigation
+                            locale={locale}
+                            disabled={isDateUnavailable}
+                            className="p-4 border border-stone-100 rounded-2xl bg-white"
+                            components={calendarComponents}
+                            classNames={{
+                                month: "space-y-6 w-full",
+                                caption: "flex justify-between items-center px-4 mb-6",
+                                caption_label: "text-xl font-heading text-adriatic-blue font-normal capitalize tracking-wide",
+                                nav: "flex items-center gap-2",
+                                nav_button: "h-8 w-8 bg-transparent hover:bg-stone-50 hover:text-adriatic-blue rounded-full flex items-center justify-center transition-all duration-300 text-stone-400",
+                                table: "w-full border-collapse",
+                                head_row: "flex w-full justify-between mb-4 px-2",
+                                head_cell: "text-stone-400 w-10 text-[10px] uppercase tracking-[0.2em] font-medium",
+                                row: "flex w-full mt-2 justify-between",
+                                cell: "h-10 w-10 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                                day: "h-10 w-10 p-0 font-light text-stone-600 hover:bg-stone-50 rounded-full transition-all duration-300",
+                                
+                                // STILE SELEZIONE BRANDIZZATO
+                                day_selected: "bg-antique-gold text-white shadow-md shadow-antique-gold/20 font-normal",
+                                day_today: "text-adriatic-blue font-bold",
+                                day_outside: "text-stone-300 opacity-50",
+                                day_disabled: "text-stone-200 line-through opacity-40 decoration-stone-200",
+                                day_range_middle: "!bg-antique-gold/10 !text-adriatic-blue rounded-none !rounded-none mx-0 w-full",
+                                day_range_start: "rounded-l-full rounded-r-none",
+                                day_range_end: "rounded-r-full rounded-l-none",
+                                day_hidden: "invisible",
+                            }}
+                        />
                     </div>
                   </div>
                 </div>
@@ -354,30 +355,48 @@ const BookingPage = () => {
                 {/* 3. DETTAGLI OSPITE */}
                 <div className="bg-white p-6 md:p-8 rounded-3xl border border-stone-100 shadow-sm">
                    <h2 className="font-heading text-2xl text-adriatic-blue mb-8 flex items-center gap-3">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-bold">3</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-antique-gold/10 text-antique-gold text-sm font-bold">3</span>
                     {language === 'it' ? 'I tuoi dati' : 'Your Details'}
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                      <Label htmlFor="guest_name">{t('booking.name')} *</Label>
-                      <Input id="guest_name" name="guest_name" value={formData.guest_name} onChange={handleInputChange} required className="h-12 rounded-xl border-stone-200 focus:border-orange-400 bg-stone-50/50" />
+                    <div className="space-y-2">
+                      <Label htmlFor="guest_name" className="text-stone-500 text-xs uppercase tracking-widest">{t('booking.name')} *</Label>
+                      <Input id="guest_name" name="guest_name" value={formData.guest_name} onChange={handleInputChange} required className="h-12 rounded-none border-0 border-b border-stone-200 focus:border-antique-gold focus:ring-0 bg-transparent px-0 text-adriatic-blue placeholder:text-stone-300" placeholder="Mario Rossi" />
                     </div>
-                    <div className="space-y-3">
-                      <Label htmlFor="guest_email">{t('booking.email')} *</Label>
-                      <Input id="guest_email" name="guest_email" type="email" value={formData.guest_email} onChange={handleInputChange} required className="h-12 rounded-xl border-stone-200 focus:border-orange-400 bg-stone-50/50" />
+                    <div className="space-y-2">
+                      <Label htmlFor="guest_email" className="text-stone-500 text-xs uppercase tracking-widest">{t('booking.email')} *</Label>
+                      <Input id="guest_email" name="guest_email" type="email" value={formData.guest_email} onChange={handleInputChange} required className="h-12 rounded-none border-0 border-b border-stone-200 focus:border-antique-gold focus:ring-0 bg-transparent px-0 text-adriatic-blue placeholder:text-stone-300" placeholder="mario@email.com" />
                     </div>
-                    <div className="space-y-3">
-                      <Label htmlFor="guest_phone">{t('booking.phone')} *</Label>
-                      <Input id="guest_phone" name="guest_phone" type="tel" value={formData.guest_phone} onChange={handleInputChange} required placeholder="+39 ..." className="h-12 rounded-xl border-stone-200 focus:border-orange-400 bg-stone-50/50" />
+                    <div className="space-y-2">
+                      <Label htmlFor="guest_phone" className="text-stone-500 text-xs uppercase tracking-widest">{t('booking.phone')} *</Label>
+                      <Input id="guest_phone" name="guest_phone" type="tel" value={formData.guest_phone} onChange={handleInputChange} required className="h-12 rounded-none border-0 border-b border-stone-200 focus:border-antique-gold focus:ring-0 bg-transparent px-0 text-adriatic-blue placeholder:text-stone-300" placeholder="+39 ..." />
                     </div>
-                    <div className="space-y-3">
-                      <Label htmlFor="num_guests">{t('booking.guests')}</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="num_guests" className="text-stone-500 text-xs uppercase tracking-widest">{t('booking.guests')}</Label>
                       <Select value={String(formData.num_guests)} onValueChange={(value) => setFormData(prev => ({ ...prev, num_guests: parseInt(value) }))}>
-                        <SelectTrigger className="h-12 rounded-xl border-stone-200 focus:border-orange-400 bg-stone-50/50"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-12 rounded-none border-0 border-b border-stone-200 focus:ring-0 px-0"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {[1, 2, 3, 4].map(num => (<SelectItem key={num} value={String(num)}>{num}</SelectItem>))}
                         </SelectContent>
                       </Select>
+                    </div>
+                    
+                     {/* Coupon & Reason */}
+                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="coupon_code" className="text-stone-500 text-xs uppercase tracking-widest">{language === 'it' ? 'Codice Promozionale' : 'Promo Code'}</Label>
+                            <div className="flex gap-2 items-end">
+                                <Input id="coupon_code" name="coupon_code" value={formData.coupon_code} onChange={handleInputChange} className={`h-10 rounded-none border-0 border-b border-stone-200 focus:ring-0 px-0 uppercase text-sm flex-1 ${couponStatus === 'valid' ? 'text-green-600 border-green-500' : ''}`} />
+                                <button type="button" onClick={validateCoupon} disabled={!formData.coupon_code} className="text-xs font-bold text-antique-gold uppercase hover:text-adriatic-blue transition-colors pb-3">
+                                    {language === 'it' ? 'Applica' : 'Apply'}
+                                </button>
+                            </div>
+                        </div>
+                     </div>
+
+                    <div className="md:col-span-2 space-y-2">
+                      <Label htmlFor="notes" className="text-stone-500 text-xs uppercase tracking-widest">{t('booking.notes')}</Label>
+                      <Textarea id="notes" name="notes" value={formData.notes} onChange={handleInputChange} rows={3} className="rounded-none border-0 border-b border-stone-200 focus:border-antique-gold focus:ring-0 bg-transparent px-0 text-adriatic-blue resize-none" placeholder="..." />
                     </div>
                   </div>
                 </div>
@@ -392,11 +411,11 @@ const BookingPage = () => {
                         const IconComponent = UPSELL_ICONS[upsell.icon] || Gift;
                         const isSelected = selectedUpsells.includes(upsell.id);
                         return (
-                          <button key={upsell.id} type="button" onClick={() => toggleUpsell(upsell.id)} className={`p-5 flex items-start gap-4 text-left transition-all duration-300 rounded-2xl border relative group ${isSelected ? 'border-orange-400 bg-orange-50/50 shadow-sm ring-1 ring-orange-400' : 'border-stone-200 hover:border-adriatic-blue/40 hover:bg-stone-50'}`}>
-                            <div className={`w-12 h-12 flex items-center justify-center rounded-full shrink-0 transition-colors ${isSelected ? 'bg-orange-500 text-white' : 'bg-stone-100 text-stone-500 group-hover:text-adriatic-blue'}`}><IconComponent className="w-6 h-6" /></div>
+                          <button key={upsell.id} type="button" onClick={() => toggleUpsell(upsell.id)} className={`p-5 flex items-start gap-4 text-left transition-all duration-300 rounded-xl border relative group ${isSelected ? 'border-antique-gold bg-antique-gold/5' : 'border-stone-200 hover:border-stone-300 hover:bg-stone-50'}`}>
+                            <div className={`w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-colors ${isSelected ? 'bg-antique-gold text-white' : 'bg-stone-100 text-stone-400'}`}><IconComponent className="w-5 h-5" /></div>
                             <div className="flex-1">
-                                <div className="flex justify-between items-start"><h3 className={`font-medium text-base ${isSelected ? 'text-adriatic-blue' : 'text-gray-700'}`}>{language === 'it' ? upsell.title_it : upsell.title_en}</h3><span className="text-orange-500 font-bold text-sm whitespace-nowrap ml-2">+ €{upsell.price}</span></div>
-                                <p className="text-stone-500 text-xs mt-1 leading-relaxed line-clamp-2">{language === 'it' ? upsell.description_it : upsell.description_en}</p>
+                                <div className="flex justify-between items-start"><h3 className={`font-medium text-base ${isSelected ? 'text-adriatic-blue' : 'text-stone-600'}`}>{language === 'it' ? upsell.title_it : upsell.title_en}</h3><span className="text-antique-gold font-bold text-xs whitespace-nowrap ml-2">+ €{upsell.price}</span></div>
+                                <p className="text-stone-400 text-xs mt-1 leading-relaxed line-clamp-2">{language === 'it' ? upsell.description_it : upsell.description_en}</p>
                             </div>
                           </button>
                         );
@@ -413,12 +432,12 @@ const BookingPage = () => {
                 <h2 className="font-heading text-2xl text-adriatic-blue mb-6 border-b border-stone-100 pb-4">{language === 'it' ? 'Il tuo viaggio' : 'Your Trip'}</h2>
                 {selectedRoomData ? (
                     <div className="space-y-4 pb-6 border-b border-stone-100">
-                        <div className="flex justify-between items-start"><span className="text-stone-500 text-sm font-medium uppercase tracking-wide">{language === 'it' ? 'Stanza' : 'Room'}</span><span className="text-adriatic-blue font-bold text-right pl-4 text-base">{language === 'it' ? selectedRoomData.name_it : selectedRoomData.name_en}</span></div>
+                        <div className="flex justify-between items-start"><span className="text-stone-500 text-xs font-bold uppercase tracking-widest">{language === 'it' ? 'Stanza' : 'Room'}</span><span className="text-adriatic-blue font-serif font-medium text-right pl-4 text-lg">{language === 'it' ? selectedRoomData.name_it : selectedRoomData.name_en}</span></div>
                         {dateRange.from && dateRange.to && (
-                            <div className="bg-stone-50 p-3 rounded-lg flex justify-between items-center text-sm">
-                                <div className="text-center"><span className="block text-xs text-stone-400 uppercase">Check-in</span><span className="font-bold text-stone-700">{format(dateRange.from, 'dd MMM')}</span></div>
-                                <ArrowRight className="w-4 h-4 text-stone-300" />
-                                <div className="text-center"><span className="block text-xs text-stone-400 uppercase">Check-out</span><span className="font-bold text-stone-700">{format(dateRange.to, 'dd MMM')}</span></div>
+                            <div className="bg-stone-50 p-4 rounded-xl flex justify-between items-center text-sm border border-stone-100 mt-2">
+                                <div className="text-center"><span className="block text-[10px] text-stone-400 uppercase tracking-widest mb-1">Check-in</span><span className="font-bold text-stone-700 text-lg">{format(dateRange.from, 'dd MMM')}</span></div>
+                                <div className="h-8 w-[1px] bg-stone-200"></div>
+                                <div className="text-center"><span className="block text-[10px] text-stone-400 uppercase tracking-widest mb-1">Check-out</span><span className="font-bold text-stone-700 text-lg">{format(dateRange.to, 'dd MMM')}</span></div>
                             </div>
                         )}
                     </div>
@@ -429,14 +448,14 @@ const BookingPage = () => {
                     <div className="pt-6 space-y-3">
                         <div className="flex justify-between text-sm"><span className="text-stone-500">{nights} {t('booking.nights')} x €{(roomPrice / nights).toFixed(0)}</span><span className="text-adriatic-blue font-medium">€{roomPrice.toFixed(2)}</span></div>
                         {selectedUpsells.length > 0 && (<div className="py-3 space-y-2 border-t border-dashed border-stone-200 mt-2">{selectedUpsells.map(upsellId => { const u = upsells.find(x => x.id === upsellId); return u ? <div key={u.id} className="flex justify-between text-sm text-stone-600"><span>{language === 'it' ? u.title_it : u.title_en}</span><span>+€{u.price}</span></div> : null; })}</div>)}
-                        {discountAmount > 0 && <div className="flex justify-between text-sm text-green-700"><span>Sconto</span><span>-€{discountAmount.toFixed(2)}</span></div>}
-                        <div className="flex justify-between items-end pt-6 border-t-2 border-stone-100 mt-6"><span className="font-heading text-adriatic-blue text-xl">{t('booking.total')}</span><span className="font-heading text-orange-500 text-4xl leading-none">€{totalPrice.toFixed(2)}</span></div>
+                        {discountAmount > 0 && <div className="flex justify-between text-sm text-green-700 bg-green-50 p-2 rounded-lg"><span>Sconto</span><span>-€{discountAmount.toFixed(2)}</span></div>}
+                        <div className="flex justify-between items-end pt-6 border-t-2 border-stone-100 mt-6"><span className="font-heading text-adriatic-blue text-xl">{t('booking.total')}</span><span className="font-heading text-antique-gold text-4xl leading-none">€{totalPrice.toFixed(2)}</span></div>
                     </div>
                 )}
-                <Button type="submit" form="booking-form" disabled={submitting || !selectedRoom || !dateRange.from || !dateRange.to} className="w-full mt-8 bg-adriatic-blue text-white hover:bg-orange-500 py-6 text-sm uppercase tracking-widest disabled:opacity-50 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-xl font-bold">
+                <Button type="submit" form="booking-form" disabled={submitting || !selectedRoom || !dateRange.from || !dateRange.to} className="w-full mt-8 bg-antique-gold text-white hover:bg-adriatic-blue py-6 text-xs uppercase tracking-[0.2em] font-bold disabled:opacity-50 shadow-lg hover:shadow-xl transition-all duration-500 rounded-none">
                     {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{t('booking.proceed')} <ArrowRight className="w-4 h-4 ml-2" /></>}
                 </Button>
-                <div className="mt-6 flex items-center justify-center gap-2 text-stone-400 opacity-60"><Lock size={14} /><span className="text-[10px] uppercase tracking-widest">{language === 'it' ? 'Pagamento sicuro SSL' : 'SSL Secure Payment'}</span></div>
+                <div className="mt-6 flex items-center justify-center gap-2 text-stone-400 opacity-60"><Lock size={12} /><span className="text-[10px] uppercase tracking-widest">{language === 'it' ? 'Pagamento sicuro SSL' : 'SSL Secure Payment'}</span></div>
               </div>
             </div>
           </div>
@@ -446,9 +465,9 @@ const BookingPage = () => {
       {/* MOBILE STICKY BAR */}
       <AnimatePresence>
         {selectedRoom && (
-            <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }} className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-200 p-4 shadow-2xl z-50 lg:hidden flex items-center justify-between gap-4">
-                <div className="flex flex-col"><span className="text-[10px] text-stone-500 uppercase tracking-wider font-bold">{nights > 0 ? `Totale (${nights} notti)` : 'Stima'}</span><span className="font-heading text-2xl text-adriatic-blue leading-none mt-1">€{totalPrice > 0 ? totalPrice.toFixed(0) : (selectedRoomData?.price_per_night || 0)}</span></div>
-                <Button onClick={(e) => { if (!dateRange.from || !dateRange.to) { document.getElementById('booking-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); toast.info(language === 'it' ? 'Seleziona le date' : 'Select dates'); } else { handleSubmit(e); } }} disabled={submitting} className="bg-adriatic-blue text-white hover:bg-orange-500 px-6 h-12 rounded-xl font-bold uppercase text-sm tracking-widest shadow-lg">
+            <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }} className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-200 p-4 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-50 lg:hidden flex items-center justify-between gap-4">
+                <div className="flex flex-col"><span className="text-[10px] text-stone-400 uppercase tracking-wider font-bold">{nights > 0 ? `Totale (${nights} notti)` : 'Stima'}</span><span className="font-heading text-2xl text-antique-gold leading-none mt-1">€{totalPrice > 0 ? totalPrice.toFixed(0) : (selectedRoomData?.price_per_night || 0)}</span></div>
+                <Button onClick={(e) => { if (!dateRange.from || !dateRange.to) { document.getElementById('booking-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); toast.info(language === 'it' ? 'Seleziona le date' : 'Select dates'); } else { handleSubmit(e); } }} disabled={submitting} className="bg-adriatic-blue text-white hover:bg-antique-gold px-6 h-12 rounded-none font-bold uppercase text-xs tracking-widest shadow-lg transition-colors duration-500">
                   {submitting ? <Loader2 className="animate-spin" /> : <span className="flex items-center gap-2">{t('booking.proceed')} <ArrowRight className="w-4 h-4" /></span>}
                 </Button>
             </motion.div>
