@@ -38,8 +38,7 @@ db = client[os.environ.get('DB_NAME', 'desideri_db')]
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
 
-# --- EMAIL CONFIGURATION (CONFIGURATO PER OUTLOOK) ---
-# Se non trovi le variabili, usa i parametri di Outlook di default
+# --- EMAIL CONFIGURATION ---
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.office365.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
 SMTP_USER = os.environ.get('EMAIL_USER') 
@@ -270,7 +269,6 @@ def _send_email_sync(to_email: str, subject: str, html_content: str):
         msg['Subject'] = subject
         msg.attach(MIMEText(html_content, 'html'))
 
-        # Connessione al server (default Outlook: smtp.office365.com)
         logger.info(f"Connecting to SMTP: {SMTP_HOST}:{SMTP_PORT}")
         server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
         server.starttls()
@@ -283,7 +281,6 @@ def _send_email_sync(to_email: str, subject: str, html_content: str):
         logger.error(f"EMAIL ERROR to {to_email}: {str(e)}")
         return False
 
-# Funzione chiamata in background
 def send_booking_confirmation_task(booking: dict, room_name: str):
     subject = "Conferma Prenotazione - Desideri di Puglia"
     html = f"""
@@ -298,10 +295,8 @@ def send_booking_confirmation_task(booking: dict, room_name: str):
     <hr>
     <small>Questa è una mail automatica.</small>
     """
-    # Invia al cliente
     _send_email_sync(booking["guest_email"], subject, html)
     
-    # Invia notifica all'admin (te stesso)
     admin_subject = f"Nuova prenotazione: {booking['guest_name']}"
     admin_html = f"<p>Nuova prenotazione ricevuta per {room_name}.</p><p>Totale: €{booking['total_price']}</p>"
     _send_email_sync(SMTP_USER, admin_subject, admin_html)
@@ -316,48 +311,63 @@ async def send_contact_notification(contact: ContactMessage):
     """
     return await asyncio.to_thread(_send_email_sync, SMTP_USER, subject, html)
 
-# ==================== ICAL CALENDAR LOGIC (SYNC) ====================
+# ==================== ICAL CALENDAR LOGIC (SYNC FIX) ====================
 
 @api_router.get("/ical/sync")
 async def sync_calendars():
-    """IMPORT: Legge i calendari di Booking e blocca le date"""
+    """IMPORT: Pulisce le vecchie importazioni e riscarica i calendari aggiornati"""
     rooms = await db.rooms.find({"ical_import_url": {"$ne": ""}}).to_list(100)
     count = 0
+    errors = []
     
     for room in rooms:
         url = room['ical_import_url']
+        room_id = room['id']
+        
         try:
-            response = requests.get(url)
+            # 1. Pulisci le vecchie importazioni per QUESTA stanza (evita duplicati e dati vecchi)
+            # Nota: 'external_ical' è la chiave fondamentale per distinguere prenotazioni reali da quelle importate
+            await db.bookings.delete_many({
+                "room_id": room_id,
+                "source": "external_ical"
+            })
+            
+            # 2. Scarica il calendario aggiornato
+            response = requests.get(url, timeout=10) # Timeout per sicurezza
+            if response.status_code != 200:
+                errors.append(f"Errore HTTP {response.status_code} per stanza {room['name_it']}")
+                continue
+
             c = Calendar(response.text)
             
             for event in c.events:
                 start_date = event.begin.format("YYYY-MM-DD")
                 end_date = event.end.format("YYYY-MM-DD")
                 
-                exists = await db.bookings.find_one({
-                    "room_id": room['id'],
-                    "check_in": start_date,
-                    "source": "external_ical"
-                })
+                # Crea la nuova prenotazione bloccata
+                new_booking = Booking(
+                    room_id=room_id,
+                    guest_email="noreply@booking.com",
+                    guest_name="Imported Booking (iCal)",
+                    check_in=start_date,
+                    check_out=end_date,
+                    num_guests=1,
+                    total_price=0,
+                    status="confirmed",
+                    source="external_ical" # Fondamentale per riconoscerle
+                )
+                await db.bookings.insert_one(new_booking.model_dump())
+                count += 1
                 
-                if not exists:
-                    new_booking = Booking(
-                        room_id=room['id'],
-                        guest_email="noreply@booking.com",
-                        guest_name="Imported Booking",
-                        check_in=start_date,
-                        check_out=end_date,
-                        num_guests=1,
-                        total_price=0,
-                        status="confirmed",
-                        source="external_ical"
-                    )
-                    await db.bookings.insert_one(new_booking.model_dump())
-                    count += 1
         except Exception as e:
-            logger.error(f"Errore sync stanza {room['id']}: {e}")
+            msg = f"Errore sync stanza {room['name_it']}: {str(e)}"
+            logger.error(msg)
+            errors.append(msg)
             
-    return {"message": f"Sincronizzazione completata. {count} nuove date bloccate."}
+    return {
+        "message": f"Sincronizzazione completata. {count} date bloccate.", 
+        "errors": errors
+    }
 
 @api_router.get("/ical/export/{room_id}")
 async def export_calendar(room_id: str):
@@ -366,14 +376,34 @@ async def export_calendar(room_id: str):
     if not room: raise HTTPException(404, "Room not found")
     
     c = Calendar()
-    bookings = await db.bookings.find({"room_id": room_id, "status": "confirmed"}).to_list(1000)
+    # Esportiamo solo le prenotazioni confermate che NON vengono da iCal (per evitare loop)
+    # Se vuoi esportare TUTTO quello che è occupato (anche blocchi manuali), togli 'source': 'website'
+    # Solitamente si esportano solo le prenotazioni dirette del sito.
+    bookings = await db.bookings.find({
+        "room_id": room_id, 
+        "status": "confirmed",
+        "source": {"$ne": "external_ical"} 
+    }).to_list(1000)
     
+    blocked = await db.blocked_dates.find({"room_id": room_id}).to_list(1000)
+
     for b in bookings:
         e = Event()
-        e.name = "Occupato - Desideri di Puglia"
+        e.name = f"Prenotazione: {b.get('guest_name', 'Ospite')}"
         e.begin = b['check_in']
         e.end = b['check_out']
         e.uid = b['id']
+        c.events.add(e)
+        
+    for blk in blocked:
+        e = Event()
+        e.name = "Chiuso Manualmente"
+        e.begin = blk['date']
+        # I blocchi manuali sono di 1 giorno, quindi end è il giorno dopo o stesso giorno (dipende dalla logica)
+        # Qui assumiamo blocco giornaliero
+        next_day = (datetime.strptime(blk['date'], "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+        e.end = next_day
+        e.uid = blk['id']
         c.events.add(e)
         
     from fastapi.responses import Response
@@ -385,7 +415,6 @@ async def export_calendar(room_id: str):
 async def root():
     return {"message": "Desideri di Puglia API", "version": "1.0.0"}
 
-# --- HEALTH CHECK (AGGIUNTO PER MONITORAGGIO) ---
 @api_router.get("/health")
 async def health_check():
     return {"status": "ok", "message": "Server is running"}
@@ -412,6 +441,7 @@ async def update_room(room_id: str, update: RoomUpdate):
 
 @api_router.get("/availability/{room_id}")
 async def get_availability(room_id: str, start_date: str, end_date: str):
+    # Logica robusta: prende TUTTO ciò che occupa la stanza
     bookings = await db.bookings.find({
         "room_id": room_id,
         "status": {"$in": ["pending", "confirmed"]},
@@ -500,14 +530,13 @@ async def delete_upsell(upsell_id: str):
     await db.upsells.delete_one({"id": upsell_id})
     return {"message": "Upsell deleted"}
 
-# --- BLOCKED DATES (FIXED FOR SINGLE DATE & ROBUSTNESS) ---
+# --- BLOCKED DATES ---
 @api_router.get("/blocked-dates/{room_id}")
 async def get_blocked_dates(room_id: str):
     return await db.blocked_dates.find({"room_id": room_id}, {"_id": 0}).to_list(1000)
 
 @api_router.post("/blocked-dates/range")
 async def block_date_range(room_id: str, start_date: str, end_date: Optional[str] = None, reason: Optional[str] = None):
-    # Fix: se end_date non c'è, usa start_date (blocca 1 solo giorno)
     if not end_date:
         end_date = start_date
 
@@ -518,7 +547,6 @@ async def block_date_range(room_id: str, start_date: str, end_date: Optional[str
         raise HTTPException(400, "Formato data non valido (YYYY-MM-DD)")
         
     blocked_count = 0
-    # Questo ciclo funziona anche se start == end (fa 1 iterazione)
     while current <= end:
         date_str = current.strftime("%Y-%m-%d")
         existing = await db.blocked_dates.find_one({"room_id": room_id, "date": date_str})
@@ -590,7 +618,6 @@ async def create_booking(booking_data: BookingCreate):
     check_out = datetime.strptime(booking_data.check_out, "%Y-%m-%d")
     nights = (check_out - check_in).days
     
-    # Calculate price
     room_price = 0.0
     current = check_in
     default_price = float(room["price_per_night"])
@@ -600,7 +627,6 @@ async def create_booking(booking_data: BookingCreate):
         room_price += float(custom["price"]) if custom else default_price
         current += timedelta(days=1)
         
-    # Upsells
     upsells_total = 0.0
     upsell_ids = []
     if booking_data.upsell_ids:
@@ -612,7 +638,6 @@ async def create_booking(booking_data: BookingCreate):
                 
     subtotal = room_price + upsells_total
     
-    # Coupon logic
     discount_amount = 0.0
     coupon_code = None
     if booking_data.coupon_code:
@@ -688,7 +713,6 @@ async def create_booking(booking_data: BookingCreate):
         "total_price": total_price
     }
 
-# --- MODIFICA CRUCIALE: BackgroundTasks ---
 @api_router.get("/bookings/status/{session_id}")
 async def check_booking_status(session_id: str, background_tasks: BackgroundTasks):
     session = stripe.checkout.Session.retrieve(session_id)
@@ -701,7 +725,6 @@ async def check_booking_status(session_id: str, background_tasks: BackgroundTask
         await db.bookings.update_one({"stripe_session_id": session_id}, {"$set": {"status": "confirmed", "payment_status": "paid"}})
         if prev_status != "paid":
             room = await db.rooms.find_one({"id": booking["room_id"]}, {"_id": 0})
-            # L'email viene inviata in background, non blocca la risposta!
             background_tasks.add_task(send_booking_confirmation_task, booking, room['name_it'])
             
     elif session.status == "expired":
@@ -723,7 +746,7 @@ async def update_booking_status(booking_id: str, status: str):
 @api_router.post("/reviews")
 async def create_review(data: ReviewCreate):
     booking = await db.bookings.find_one({"id": data.booking_id})
-    if not booking or booking["status"] != "confirmed": # Corretto da completed a confirmed
+    if not booking or booking["status"] != "confirmed":
         raise HTTPException(400, "Booking not confirmed")
     review = Review(
         booking_id=data.booking_id,
@@ -763,48 +786,24 @@ async def submit_contact(contact: ContactMessage):
 async def get_messages():
     return await db.contact_messages.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
 
-# --- ANALYTICS (FIXED FOR REAL DATA) ---
+# --- ANALYTICS ---
 @api_router.get("/analytics/top-stats")
 async def get_top_stats():
     today = datetime.now().strftime("%Y-%m-%d")
-    
-    checkins = await db.bookings.count_documents({
-        "check_in": today, 
-        "status": "confirmed"
-    })
-    
+    checkins = await db.bookings.count_documents({"check_in": today, "status": "confirmed"})
     pending = await db.bookings.count_documents({"status": "pending"})
-    
-    checkouts = await db.bookings.count_documents({
-        "check_out": today,
-        "status": "confirmed"
-    })
-    
-    # Calcolo fatturato del mese
+    checkouts = await db.bookings.count_documents({"check_out": today, "status": "confirmed"})
     first_day = date.today().replace(day=1).strftime("%Y-%m-%d")
-    bookings_month = await db.bookings.find({
-        "created_at": {"$gte": first_day},
-        "status": "confirmed"
-    }).to_list(1000)
-    
+    bookings_month = await db.bookings.find({"created_at": {"$gte": first_day}, "status": "confirmed"}).to_list(1000)
     month_revenue = sum(b.get('total_price', 0) for b in bookings_month)
-    
-    return {
-        "todays_checkins": checkins, 
-        "pending_bookings": pending, 
-        "todays_checkouts": checkouts, 
-        "month_revenue": month_revenue
-    }
+    return {"todays_checkins": checkins, "pending_bookings": pending, "todays_checkouts": checkouts, "month_revenue": month_revenue}
 
 @api_router.get("/analytics/overview")
 async def get_analytics_overview(start_date: str = None, end_date: str = None):
-    # Logica per i grafici
     query = {"status": "confirmed"}
     if start_date and end_date:
         query["check_in"] = {"$gte": start_date}
-
     bookings = await db.bookings.find(query).to_list(2000)
-    
     total_revenue = 0.0
     total_bookings = len(bookings)
     nights_sold = 0
@@ -812,52 +811,26 @@ async def get_analytics_overview(start_date: str = None, end_date: str = None):
     bookings_nonna = 0
     revenue_pozzo = 0.0
     bookings_pozzo = 0
-    
     for b in bookings:
         price = b.get('total_price', 0)
         total_revenue += price
-        
         try:
             d1 = datetime.strptime(b['check_in'], "%Y-%m-%d")
             d2 = datetime.strptime(b['check_out'], "%Y-%m-%d")
             nights_sold += (d2 - d1).days
-        except:
-            pass
-            
-        if b.get('room_id') == 'nonna':
-            revenue_nonna += price
-            bookings_nonna += 1
-        elif b.get('room_id') == 'pozzo':
-            revenue_pozzo += price
-            bookings_pozzo += 1
-
-    # Calcolo Occupancy (approssimato)
+        except: pass
+        if b.get('room_id') == 'nonna': revenue_nonna += price; bookings_nonna += 1
+        elif b.get('room_id') == 'pozzo': revenue_pozzo += price; bookings_pozzo += 1
     occupancy_rate = 0
-    if total_bookings > 0:
-        occupancy_rate = round((nights_sold / (365 * 2)) * 100, 1)
-
+    if total_bookings > 0: occupancy_rate = round((nights_sold / (365 * 2)) * 100, 1)
     return {
-        "summary": {
-            "total_revenue": total_revenue,
-            "total_bookings": total_bookings,
-            "occupancy_rate": occupancy_rate,
-            "avg_price_per_night": round(total_revenue / nights_sold, 2) if nights_sold > 0 else 0,
-            "total_nights": nights_sold
-        },
-        "by_room": {
-            "bookings": {"nonna": bookings_nonna, "pozzo": bookings_pozzo},
-            "revenue": {"nonna": revenue_nonna, "pozzo": revenue_pozzo}
-        },
-        "by_status": {
-            "pending": await db.bookings.count_documents({"status": "pending"}),
-            "confirmed": total_bookings,
-            "cancelled": await db.bookings.count_documents({"status": "cancelled"})
-        }
+        "summary": {"total_revenue": total_revenue, "total_bookings": total_bookings, "occupancy_rate": occupancy_rate, "avg_price_per_night": round(total_revenue / nights_sold, 2) if nights_sold > 0 else 0, "total_nights": nights_sold},
+        "by_room": {"bookings": {"nonna": bookings_nonna, "pozzo": bookings_pozzo}, "revenue": {"nonna": revenue_nonna, "pozzo": revenue_pozzo}},
+        "by_status": {"pending": await db.bookings.count_documents({"status": "pending"}), "confirmed": total_bookings, "cancelled": await db.bookings.count_documents({"status": "cancelled"})}
     }
 
 @api_router.get("/analytics/monthly")
 async def get_monthly(year: int = 2025):
-    # Placeholder per grafico mensile (si può espandere in futuro)
     return {"months": []}
 
 @api_router.get("/analytics/recent-bookings")
@@ -904,14 +877,8 @@ async def logout(token: str):
 
 @api_router.get("/stay-reasons")
 async def get_stay_reasons():
-    return [{"id": "vacanza", "it": "Vacanza", "en": "Holiday"}, {"id": "lavoro", "it": "Lavoro", "en": "Work"}]
+    return [{"id": "vacanza", "it": "Vacanza", "en": "Holiday"}, {"id": "lavoro", "it": "Lavoro", "en": "Work"}, {"id": "altro", "it": "Altro", "en": "Other"}]
 
 # ==================== STARTUP ====================
 app.include_router(api_router)
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
